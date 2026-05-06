@@ -232,7 +232,7 @@ strong{color:var(--txt);font-weight:700}
 // ╚══════════════════════════════════════════════════════════════════╝
 const CONFIG = {
   supabaseUrl:     'https://bhbrzrupkpnxmyhmrfvc.supabase.co',   
-  supabaseKey:     'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJoYnJ6cnVwa3BueG15aG1yZnZjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgwNzM3MDEsImV4cCI6MjA5MzY0OTcwMX0.VLks5CWZ0cnHRKoYMm8dOaM3pMGfnbD_yYEpkqpbxK8',         
+  supabaseKey:     'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJoYnJ6cnVwa3BueG15aG1yZnZjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgwNzM3MDEsImV4cCI6MjA5MzY0OTcwMX0.VLks5CWZ0cnHRKoYMm8dOaM3pMGfnbD_yYEpkqpbxK8',         // aus Supabase → Settings → API
   outlookClientId: '',                       // Optional: Azure App Client-ID
 };
 
@@ -264,9 +264,13 @@ const S = {
 let DB;
 
 async function dbInit() {
-  if (!CONFIG.supabaseUrl || CONFIG.supabaseUrl === 'https://bhbrzrupkpnxmyhmrfvc.supabase.co') return false;
+  if (!CONFIG.supabaseUrl || CONFIG.supabaseUrl === 'DEINE_SUPABASE_URL') return false;
   try {
-    DB = supabase.createClient(CONFIG.supabaseUrl, CONFIG.supabaseKey);
+    const client = supabase.createClient(CONFIG.supabaseUrl, CONFIG.supabaseKey);
+    // Test connection
+    const test = await client.from('app_settings').select('id').limit(1);
+    if (test.error) { console.error('Supabase test:', test.error); return false; }
+    DB = client;
     S.dbReady = true;
     return true;
   } catch(e) { console.error('Supabase init:', e); return false; }
