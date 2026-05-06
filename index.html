@@ -231,8 +231,8 @@ strong{color:var(--txt);font-weight:700}
 // ║  KONFIGURATION — Nur diese 2-3 Zeilen anpassen                  ║
 // ╚══════════════════════════════════════════════════════════════════╝
 const CONFIG = {
-  supabaseUrl:     'DEINE_SUPABASE_URL',   // https://xxxxx.supabase.co
-  supabaseKey:     'DEIN_ANON_KEY',         // aus Supabase → Settings → API
+  supabaseUrl:     'https://bhbrzrupkpnxmyhmrfvc.supabase.co',   
+  supabaseKey:     'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJoYnJ6cnVwa3BueG15aG1yZnZjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgwNzM3MDEsImV4cCI6MjA5MzY0OTcwMX0.VLks5CWZ0cnHRKoYMm8dOaM3pMGfnbD_yYEpkqpbxK8',         
   outlookClientId: '',                       // Optional: Azure App Client-ID
 };
 
@@ -264,7 +264,7 @@ const S = {
 let DB;
 
 async function dbInit() {
-  if (!CONFIG.supabaseUrl || CONFIG.supabaseUrl === 'DEINE_SUPABASE_URL') return false;
+  if (!CONFIG.supabaseUrl || CONFIG.supabaseUrl === 'https://bhbrzrupkpnxmyhmrfvc.supabase.co') return false;
   try {
     DB = supabase.createClient(CONFIG.supabaseUrl, CONFIG.supabaseKey);
     S.dbReady = true;
