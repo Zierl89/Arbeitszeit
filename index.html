@@ -1,0 +1,1073 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Arbeitszeit">
+<title>⏱ Arbeitszeit</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
+<style>
+/* ═══ VARIABLES ═══════════════════════════════════════════════════ */
+:root {
+  --bg:       #0b0d11;
+  --bg2:      #0f1218;
+  --sur:      rgba(255,255,255,0.034);
+  --sur2:     rgba(255,255,255,0.065);
+  --bdr:      rgba(255,255,255,0.075);
+  --bdr2:     rgba(255,255,255,0.13);
+  --txt:      #dddde0;
+  --txt2:     rgba(255,255,255,0.48);
+  --txt3:     rgba(255,255,255,0.22);
+  --gold:     #e8c84a;
+  --gold2:    rgba(232,200,74,0.14);
+  --gold3:    rgba(232,200,74,0.25);
+  --grn:      #5cd6a0;
+  --grn2:     rgba(92,214,160,0.12);
+  --red:      #f07070;
+  --red2:     rgba(240,112,112,0.12);
+  --blu:      #7eb8f5;
+  --blu2:     rgba(126,184,245,0.12);
+  --r:        11px;
+  --mono:     'Space Mono', monospace;
+  --serif:    'DM Serif Display', Georgia, serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:var(--bg);color:var(--txt);font-family:var(--mono);min-height:100vh;font-size:14px;-webkit-font-smoothing:antialiased}
+::-webkit-scrollbar{width:3px}::-webkit-scrollbar-thumb{background:var(--gold3);border-radius:2px}
+
+/* ═══ TOAST ════════════════════════════════════════════════════════ */
+#toast{position:fixed;top:14px;right:14px;z-index:999;background:rgba(15,18,24,0.95);border:1px solid var(--bdr2);padding:9px 16px;border-radius:8px;font-size:12px;color:var(--grn);opacity:0;transform:translateY(-8px);transition:all .28s;pointer-events:none;backdrop-filter:blur(14px);border-left:3px solid var(--grn)}
+#toast.err{color:var(--red);border-left-color:var(--red)}
+#toast.show{opacity:1;transform:translateY(0)}
+
+/* ═══ HEADER ═══════════════════════════════════════════════════════ */
+#hdr{display:flex;align-items:center;justify-content:space-between;padding:0 20px;height:50px;border-bottom:1px solid var(--bdr);background:rgba(11,13,17,0.96);position:sticky;top:0;z-index:200;backdrop-filter:blur(12px)}
+.logo{display:flex;align-items:center;gap:10px}
+.ldot{width:7px;height:7px;border-radius:50%;background:var(--gold);box-shadow:0 0 10px var(--gold),0 0 20px rgba(232,200,74,0.3)}
+.ltxt{font-size:11px;color:var(--gold);letter-spacing:.18em;font-weight:700}
+#uname{color:var(--txt3);font-size:11px;letter-spacing:.04em;margin-left:4px}
+#clock{font-size:19px;color:var(--gold);letter-spacing:.08em;font-weight:700}
+
+/* ═══ NAV ══════════════════════════════════════════════════════════ */
+#nav{display:flex;gap:2px;padding:7px 14px;border-bottom:1px solid var(--bdr);background:var(--bg2);overflow-x:auto;-webkit-overflow-scrolling:touch;position:sticky;top:50px;z-index:100}
+#nav::-webkit-scrollbar{display:none}
+.nb{background:none;border:none;cursor:pointer;padding:6px 12px;border-radius:6px;font-family:var(--mono);font-size:10px;letter-spacing:.06em;color:var(--txt2);white-space:nowrap;transition:all .15s}
+.nb:hover{color:var(--gold);background:var(--gold2)}
+.nb.act{color:var(--gold);background:var(--gold2);border:1px solid var(--gold3)}
+
+/* ═══ MAIN ═════════════════════════════════════════════════════════ */
+#view{max-width:880px;margin:0 auto;padding:20px 16px 40px}
+
+/* ═══ CARDS ════════════════════════════════════════════════════════ */
+.card{background:var(--sur);border:1px solid var(--bdr);border-radius:var(--r);padding:18px 20px;margin-bottom:13px}
+.ctitle{font-size:9px;color:var(--txt3);letter-spacing:.14em;margin-bottom:15px}
+
+/* ═══ STATS GRID ═══════════════════════════════════════════════════ */
+.sgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:14px}
+.sc{background:var(--sur);border:1px solid var(--bdr);border-radius:10px;padding:13px 16px}
+.sl{font-size:9px;color:var(--txt3);letter-spacing:.12em;margin-bottom:5px}
+.sv{font-size:21px;font-weight:700;line-height:1;margin-bottom:2px}
+.ss{font-size:11px;color:var(--txt3)}
+.cgold{color:var(--gold)}.cgrn{color:var(--grn)}.cred{color:var(--red)}.cblu{color:var(--blu)}
+
+/* ═══ TABLE ROWS ═══════════════════════════════════════════════════ */
+.tbl{background:var(--sur);border:1px solid var(--bdr);border-radius:var(--r);overflow:hidden;margin-bottom:13px}
+.th,.tr{display:grid;gap:6px;padding:9px 13px;align-items:center}
+.th{background:var(--sur2);font-size:9px;color:var(--txt3);letter-spacing:.1em;border-bottom:1px solid var(--bdr)}
+.tr{border-bottom:1px solid rgba(255,255,255,0.04);transition:background .12s;cursor:pointer}
+.tr:last-child{border-bottom:none}
+.tr:hover{background:rgba(255,255,255,0.04)}
+.tr.tod{background:rgba(232,200,74,0.04)}
+.tr.wke{opacity:.35;cursor:default}
+.tr.wke:hover{background:none}
+.totrow{display:flex;justify-content:space-between;padding:11px 13px;border-top:1px solid var(--bdr);background:rgba(255,255,255,0.02);font-size:11px;color:var(--txt2)}
+
+/* Column layouts */
+.wc{grid-template-columns:85px 85px 85px 65px 75px}
+.mc{grid-template-columns:42px 90px 80px 80px 65px 75px}
+.qc{grid-template-columns:1fr 80px 80px 85px 90px}
+.ac{grid-template-columns:1fr auto auto auto}
+
+/* ═══ FORMS ════════════════════════════════════════════════════════ */
+.fl{font-size:9px;color:var(--txt2);margin-bottom:5px;letter-spacing:.07em}
+input[type=time],input[type=text],input[type=number],input[type=date],select,textarea{background:rgba(255,255,255,0.05);border:1px solid var(--bdr2);border-radius:7px;color:var(--txt);padding:7px 10px;font-family:var(--mono);font-size:13px;outline:none;transition:border-color .18s}
+input:focus,select:focus,textarea:focus{border-color:var(--gold3)}
+input[type=time]{color:var(--gold);width:110px}
+input[type=time]::-webkit-calendar-picker-indicator{filter:invert(.7) sepia(1) saturate(3) hue-rotate(5deg)}
+input[type=text],input[type=number],input[type=date]{width:100%}
+select{width:100%}
+
+/* ═══ BUTTONS ══════════════════════════════════════════════════════ */
+.btn{padding:8px 16px;border:none;border-radius:8px;font-family:var(--mono);font-size:11px;cursor:pointer;transition:all .15s;letter-spacing:.04em;font-weight:700}
+.btn:hover{transform:translateY(-1px);filter:brightness(1.12)}
+.btn:active{transform:translateY(0)}
+.bg{background:var(--gold2);color:var(--gold);border:1px solid var(--gold3)}
+.bn{background:var(--grn2);color:var(--grn);border:1px solid rgba(92,214,160,.25)}
+.br{background:var(--red2);color:var(--red);border:1px solid rgba(240,112,112,.2)}
+.bb{background:var(--blu2);color:var(--blu);border:1px solid rgba(126,184,245,.25)}
+.bdel{background:none;border:none;color:rgba(240,112,112,.4);cursor:pointer;font-size:13px;padding:3px 8px;border-radius:4px;transition:all .15s;font-family:var(--mono)}
+.bdel:hover{color:var(--red);background:var(--red2)}
+.stamp{width:100%;padding:14px;font-size:13px;font-weight:700;border-radius:10px;letter-spacing:.07em;border:none;cursor:pointer;transition:all .18s;font-family:var(--mono)}
+.stamp:hover{transform:translateY(-1px);filter:brightness(1.1)}
+
+/* ═══ DATE NAV ═════════════════════════════════════════════════════ */
+.dnav{display:flex;align-items:center;gap:8px;margin-bottom:16px}
+.na{background:none;border:1px solid var(--bdr2);border-radius:6px;color:var(--txt2);padding:5px 11px;cursor:pointer;font-family:var(--mono);font-size:11px;transition:all .14s;white-space:nowrap}
+.na:hover{color:var(--gold);border-color:var(--gold3)}
+.dtitle{font-family:var(--mono);font-size:13px;color:var(--gold);flex:1;text-align:center;letter-spacing:.04em}
+
+/* ═══ BADGES ═══════════════════════════════════════════════════════ */
+.badge{display:inline-block;padding:2px 7px;border-radius:4px;font-size:9px;border:1px solid;letter-spacing:.05em}
+.bdg{background:var(--gold2);color:var(--gold);border-color:var(--gold3)}
+.bdb{background:var(--blu2);color:var(--blu);border-color:rgba(126,184,245,.3)}
+.bdn{background:var(--grn2);color:var(--grn);border-color:rgba(92,214,160,.3)}
+.bdr_{background:var(--red2);color:var(--red);border-color:rgba(240,112,112,.3)}
+.bdx{background:var(--sur2);color:var(--txt3);border-color:var(--bdr)}
+
+/* ═══ PROGRESS ═════════════════════════════════════════════════════ */
+.ptrack{height:5px;background:rgba(255,255,255,0.06);border-radius:3px;overflow:hidden;margin-top:8px}
+.pfill{height:100%;border-radius:3px;transition:width .5s ease}
+
+/* ═══ OUTLOOK EVENTS ═══════════════════════════════════════════════ */
+.ev{display:flex;gap:10px;padding:7px 11px;background:rgba(126,184,245,.06);border-left:2px solid var(--blu);border-radius:0 6px 6px 0;margin-bottom:5px;align-items:flex-start}
+.evt{font-size:10px;color:var(--blu);white-space:nowrap;margin-top:1px}
+.evu{font-size:13px;color:var(--txt)}
+
+/* ═══ STEPS (setup guide) ══════════════════════════════════════════ */
+.step{display:flex;gap:13px;background:var(--sur);border-radius:10px;padding:13px 15px;margin-bottom:9px}
+.snum{width:25px;height:25px;border-radius:50%;background:var(--blu2);border:1px solid rgba(126,184,245,.3);display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--blu);flex-shrink:0}
+.stit{font-weight:700;margin-bottom:3px;font-size:13px}
+.sdsc{color:var(--txt2);font-size:13px;line-height:1.6}
+
+/* ═══ KW CHIP ══════════════════════════════════════════════════════ */
+.kw{font-size:9px;color:var(--txt3);background:rgba(255,255,255,.05);border-radius:3px;padding:2px 5px;display:inline-block;letter-spacing:.04em}
+
+/* ═══ QUARTER TABS ═════════════════════════════════════════════════ */
+.qtabs{display:flex;gap:4px;margin-bottom:16px;flex-wrap:wrap}
+.qt{background:none;border:1px solid var(--bdr);border-radius:7px;padding:7px 18px;color:var(--txt2);font-family:var(--mono);font-size:11px;cursor:pointer;transition:all .15s;letter-spacing:.06em}
+.qt:hover{color:var(--gold);border-color:var(--gold3)}
+.qt.qa{color:var(--gold);background:var(--gold2);border-color:var(--gold3);font-weight:700}
+
+/* ═══ WARN BOX ═════════════════════════════════════════════════════ */
+.warn{background:rgba(240,112,112,.07);border:1px solid rgba(240,112,112,.2);border-radius:10px;padding:14px 16px;margin-bottom:14px;font-size:13px;color:var(--txt2);line-height:1.65}
+.info{background:rgba(126,184,245,.07);border:1px solid rgba(126,184,245,.2);border-radius:10px;padding:14px 16px;margin-bottom:14px;font-size:13px;color:var(--txt2);line-height:1.65}
+
+/* ═══ MISC ═════════════════════════════════════════════════════════ */
+.sep{border:none;border-top:1px solid var(--bdr);margin:16px 0}
+code{font-family:var(--mono);font-size:11px;background:rgba(255,255,255,.08);padding:2px 6px;border-radius:4px;color:var(--gold)}
+a{color:var(--blu)}
+strong{color:var(--txt);font-weight:700}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:11px}
+@media(max-width:640px){.row2{grid-template-columns:1fr}.wc{grid-template-columns:70px 70px 70px 55px 65px}.mc{grid-template-columns:32px 75px 65px 65px 55px 65px}}
+@media(max-width:480px){.wc{grid-template-columns:60px 60px 60px 50px 58px}.mc{display:none}}
+.mmt{font-size:10px;color:var(--txt3);font-family:var(--mono)}
+</style>
+</head>
+<body>
+<div id="toast"></div>
+
+<header id="hdr">
+  <div class="logo">
+    <div class="ldot"></div>
+    <span class="ltxt">ARBEITSZEIT</span>
+    <span id="uname"></span>
+  </div>
+  <div id="clock"></div>
+</header>
+
+<nav id="nav">
+  <button class="nb" data-v="today">Heute</button>
+  <button class="nb" data-v="week">Woche</button>
+  <button class="nb" data-v="month">Monat</button>
+  <button class="nb" data-v="quarter">Quartal</button>
+  <button class="nb" data-v="absences">Abwesenheit</button>
+  <button class="nb" data-v="outlook">📅 Outlook</button>
+  <button class="nb" data-v="settings">⚙ Einstellungen</button>
+</nav>
+
+<main id="view"></main>
+
+<!-- CDN Libraries -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="https://alcdn.msauth.net/browser/2.38.3/js/msal-browser.min.js"></script>
+
+<script>
+/*
+╔══════════════════════════════════════════════════════════════════════╗
+║  ARBEITSZEIT APP — Einrichtungsanleitung                            ║
+║                                                                      ║
+║  SUPABASE SQL (einmalig im SQL-Editor ausführen):                   ║
+║                                                                      ║
+║  create table time_entries (                                         ║
+║    date date primary key,                                            ║
+║    kommen text, gehen text, pause text, note text,                  ║
+║    updated_at timestamptz default now()                              ║
+║  );                                                                  ║
+║  create table absences (                                             ║
+║    id uuid default gen_random_uuid() primary key,                    ║
+║    from_date date not null, to_date date not null,                  ║
+║    type text not null default 'Urlaub', note text,                  ║
+║    created_at timestamptz default now()                              ║
+║  );                                                                  ║
+║  create table app_settings (                                         ║
+║    id int primary key default 1,                                     ║
+║    name text default '',                                             ║
+║    soll_stunden numeric default 8,                                   ║
+║    urlaubs_tage int default 25,                                      ║
+║    outlook_client_id text default ''                                 ║
+║  );                                                                  ║
+║  insert into app_settings(id) values(1) on conflict do nothing;    ║
+║                                                                      ║
+║  RLS DEAKTIVIEREN (für persönliche Nutzung):                        ║
+║  alter table time_entries disable row level security;               ║
+║  alter table absences disable row level security;                   ║
+║  alter table app_settings disable row level security;               ║
+╚══════════════════════════════════════════════════════════════════════╝
+*/
+
+// ╔══════════════════════════════════════════════════════════════════╗
+// ║  KONFIGURATION — Nur diese 2-3 Zeilen anpassen                  ║
+// ╚══════════════════════════════════════════════════════════════════╝
+const CONFIG = {
+  supabaseUrl:     'DEINE_SUPABASE_URL',   // https://xxxxx.supabase.co
+  supabaseKey:     'DEIN_ANON_KEY',         // aus Supabase → Settings → API
+  outlookClientId: '',                       // Optional: Azure App Client-ID
+};
+
+'use strict';
+
+// ═══════════════════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════════════════
+const S = {
+  view:      'today',
+  date:      todayStr(),
+  wkAnchor:  todayStr(),
+  month:     new Date().getMonth(),
+  year:      new Date().getFullYear(),
+  quarter:   Math.floor(new Date().getMonth() / 3),
+  qYear:     new Date().getFullYear(),
+  entries:   {},    // { 'YYYY-MM-DD': {kommen,gehen,pause,note} }
+  absences:  [],    // [{id,from_date,to_date,type,note}]
+  settings:  { name:'', sollStunden:8, urlaubsTage:25, outlookClientId:'' },
+  olEvents:  [],    // Microsoft Graph calendar events
+  olConnected: false,
+  dbReady:   false,
+  saving:    false,
+};
+
+// ═══════════════════════════════════════════════════════════════════
+// SUPABASE
+// ═══════════════════════════════════════════════════════════════════
+let DB;
+
+async function dbInit() {
+  if (!CONFIG.supabaseUrl || CONFIG.supabaseUrl === 'DEINE_SUPABASE_URL') return false;
+  try {
+    DB = supabase.createClient(CONFIG.supabaseUrl, CONFIG.supabaseKey);
+    S.dbReady = true;
+    return true;
+  } catch(e) { console.error('Supabase init:', e); return false; }
+}
+
+async function dbLoad() {
+  if (!DB) return;
+  const [eRes, aRes, sRes] = await Promise.all([
+    DB.from('time_entries').select('*'),
+    DB.from('absences').select('*').order('from_date', { ascending: false }),
+    DB.from('app_settings').select('*').eq('id', 1).single(),
+  ]);
+  if (eRes.data) {
+    S.entries = {};
+    eRes.data.forEach(e => {
+      S.entries[e.date] = { kommen:e.kommen, gehen:e.gehen, pause:e.pause, note:e.note };
+    });
+  }
+  if (aRes.data) S.absences = aRes.data;
+  if (sRes.data) {
+    S.settings = {
+      name:            sRes.data.name || '',
+      sollStunden:     parseFloat(sRes.data.soll_stunden) || 8,
+      urlaubsTage:     parseInt(sRes.data.urlaubs_tage) || 25,
+      outlookClientId: sRes.data.outlook_client_id || '',
+    };
+    if (S.settings.outlookClientId && typeof msal !== 'undefined') initMSAL(S.settings.outlookClientId);
+  }
+}
+
+async function dbSaveEntry(date) {
+  const e = S.entries[date] || {};
+  if (!DB) return;
+  const { error } = await DB.from('time_entries').upsert({
+    date, kommen:e.kommen||null, gehen:e.gehen||null, pause:e.pause||null, note:e.note||null,
+    updated_at: new Date().toISOString()
+  }, { onConflict: 'date' });
+  if (error) console.error('Save entry:', error);
+}
+
+async function dbSaveAbsence(ab) {
+  if (!DB) return null;
+  const { data, error } = await DB.from('absences').insert({
+    from_date:ab.from, to_date:ab.to, type:ab.type, note:ab.note||null
+  }).select().single();
+  if (error) { console.error('Save absence:', error); return null; }
+  return data;
+}
+
+async function dbDeleteAbsence(id) {
+  if (!DB) return;
+  await DB.from('absences').delete().eq('id', id);
+}
+
+async function dbSaveSettings() {
+  if (!DB) return;
+  await DB.from('app_settings').upsert({
+    id:1, name:S.settings.name, soll_stunden:S.settings.sollStunden,
+    urlaubs_tage:S.settings.urlaubsTage, outlook_client_id:S.settings.outlookClientId
+  }, { onConflict: 'id' });
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// OUTLOOK / MSAL
+// ═══════════════════════════════════════════════════════════════════
+let msalApp, olToken;
+
+function initMSAL(clientId) {
+  if (!clientId || typeof msal === 'undefined') return false;
+  try {
+    msalApp = new msal.PublicClientApplication({
+      auth: { clientId, authority:'https://login.microsoftonline.com/common', redirectUri: location.origin + location.pathname },
+      cache: { cacheLocation:'sessionStorage' },
+    });
+    // Try silent token acquisition
+    const accounts = msalApp.getAllAccounts();
+    if (accounts.length > 0) {
+      msalApp.acquireTokenSilent({ scopes:['Calendars.Read','User.Read'], account: accounts[0] })
+        .then(r => { olToken = r.accessToken; S.olConnected = true; fetchOlEvents(); })
+        .catch(() => {});
+    }
+    return true;
+  } catch(e) { return false; }
+}
+
+async function connectOutlook() {
+  const cid = S.settings.outlookClientId || CONFIG.outlookClientId;
+  if (!cid) { toast('Bitte Azure Client ID in Einstellungen eintragen', 'err'); return; }
+  if (!msalApp) initMSAL(cid);
+  if (!msalApp) { toast('MSAL nicht verfügbar', 'err'); return; }
+  try {
+    const r = await msalApp.loginPopup({ scopes:['Calendars.Read','User.Read'] });
+    olToken = r.accessToken;
+    S.olConnected = true;
+    await fetchOlEvents();
+    toast('Outlook verbunden ✓');
+    render();
+  } catch(e) { toast('Verbindung abgebrochen', 'err'); }
+}
+
+async function fetchOlEvents() {
+  if (!olToken) return;
+  const start = new Date(); start.setDate(1); start.setMonth(start.getMonth() - 1);
+  const end   = new Date(); end.setDate(1);   end.setMonth(end.getMonth() + 3);
+  try {
+    const res = await fetch(
+      `https://graph.microsoft.com/v1.0/me/calendarView?startDateTime=${start.toISOString()}&endDateTime=${end.toISOString()}&$select=subject,start,end,showAs,isAllDay&$top=200&$orderby=start/dateTime`,
+      { headers: { Authorization:`Bearer ${olToken}` } }
+    );
+    if (res.ok) { const d = await res.json(); S.olEvents = d.value || []; }
+    else { toast('Outlook-Abfrage fehlgeschlagen', 'err'); }
+  } catch(e) { toast('Netzwerkfehler bei Outlook', 'err'); }
+}
+
+function eventsForDate(ds) {
+  return S.olEvents.filter(e => {
+    const s = (e.start.dateTime || e.start.date || '').slice(0, 10);
+    return s === ds;
+  });
+}
+
+function fmtEvTime(e) {
+  if (e.isAllDay) return 'Ganztag';
+  const t = new Date(e.start.dateTime);
+  return t.toLocaleTimeString('de-AT', { hour:'2-digit', minute:'2-digit' });
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// UTILITIES
+// ═══════════════════════════════════════════════════════════════════
+function todayStr() { return new Date().toISOString().slice(0,10); }
+function nowTime()  { const n=new Date(); return p(n.getHours())+':'+p(n.getMinutes()); }
+function p(n)       { return String(n).padStart(2,'0'); }
+function toMins(t)  { if(!t) return 0; const[h,m]=t.split(':').map(Number); return h*60+m; }
+function fromMins(m,alwaysSign=false) {
+  const neg=m<0; m=Math.abs(m);
+  const s=(neg?'-':alwaysSign?'+':''); return s+p(Math.floor(m/60))+':'+p(m%60);
+}
+function workMins(e) {
+  if(!e?.kommen||!e?.gehen) return null;
+  return Math.max(0, toMins(e.gehen)-toMins(e.kommen)-toMins(e.pause||'00:00'));
+}
+function isWE(ds)   { const d=new Date(ds).getDay(); return d===0||d===6; }
+
+function kw(ds) {
+  const d=new Date(ds); d.setHours(0,0,0,0);
+  d.setDate(d.getDate()+3-(d.getDay()+6)%7);
+  const w1=new Date(d.getFullYear(),0,4);
+  return 1+Math.round(((d-w1)/86400000-3+(w1.getDay()+6)%7)/7);
+}
+function weekDates(ds) {
+  const d=new Date(ds), day=d.getDay()||7;
+  d.setDate(d.getDate()-day+1);
+  return Array.from({length:7},(_,i)=>{ const n=new Date(d); n.setDate(d.getDate()+i); return n.toISOString().slice(0,10); });
+}
+function daysInMonth(y,m) { return new Date(y,m+1,0).getDate(); }
+function monthDates(y,m) {
+  return Array.from({length:daysInMonth(y,m)},(_,i)=>`${y}-${p(m+1)}-${p(i+1)}`);
+}
+function fmtDay(ds) {
+  const d=new Date(ds);
+  return ['So','Mo','Di','Mi','Do','Fr','Sa'][d.getDay()]+' '+p(d.getDate())+'.'+p(d.getMonth()+1)+'.';
+}
+function fmtShortDay(ds) {
+  const d=new Date(ds);
+  return ['So','Mo','Di','Mi','Do','Fr','Sa'][d.getDay()]+' '+p(d.getDate())+'.';
+}
+
+const MONTHS=['Jänner','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
+const MONS=['Jän','Feb','Mär','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez'];
+
+function monthStats(y,m) {
+  const dates=monthDates(y,m);
+  const soll=S.settings.sollStunden*60;
+  let ist=0,sollT=0;
+  dates.forEach(d=>{
+    const e=S.entries[d], wm=workMins(e);
+    if(!isWE(d)){
+      const vac=S.absences.find(v=>d>=v.from_date&&d<=v.to_date);
+      if(!vac) sollT+=soll;
+    }
+    if(wm!==null) ist+=wm;
+  });
+  return { ist, sollT, diff:ist-sollT };
+}
+
+function totalZA() {
+  const soll=S.settings.sollStunden*60;
+  return Object.entries(S.entries).reduce((acc,[date,e])=>{
+    const m=workMins(e); if(m===null) return acc;
+    const dw=new Date(date).getDay();
+    if(dw===0||dw===6) return acc+m;
+    return acc+(m-soll);
+  },0);
+}
+
+function vacUsed() {
+  return S.absences.filter(v=>v.type==='Urlaub').reduce((acc,v)=>{
+    let d=new Date(v.from_date),end=new Date(v.to_date),c=0;
+    while(d<=end){ if(d.getDay()!==0&&d.getDay()!==6) c++; d.setDate(d.getDate()+1); }
+    return acc+c;
+  },0);
+}
+
+function absenceBadge(type) {
+  const map={'Urlaub':'bdb','ZA (Zeitausgleich)':'bdn','Krankenstand':'bdr_','Feiertag':'bdg'};
+  return map[type]||'bdx';
+}
+
+function diffColor(diff) { return diff>=0?'cgrn':'cred'; }
+
+// ═══════════════════════════════════════════════════════════════════
+// TOAST
+// ═══════════════════════════════════════════════════════════════════
+function toast(msg,type='ok') {
+  const el=document.getElementById('toast');
+  el.textContent=msg; el.className='show '+(type==='err'?'err':'');
+  setTimeout(()=>el.className='',2800);
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// RENDER — TODAY
+// ═══════════════════════════════════════════════════════════════════
+function viewToday() {
+  const e=S.entries[S.date]||{};
+  const wm=workMins(e);
+  const soll=S.settings.sollStunden*60;
+  const za=totalZA();
+  const vu=vacUsed();
+  const wdates=weekDates(S.date);
+  const wkTotal=wdates.reduce((a,d)=>{const m=workMins(S.entries[d]||{});return m?a+m:a},0);
+  const wkSoll=wdates.filter(d=>!isWE(d)).length*soll;
+  const pct=wm!==null?Math.min(100,(wm/soll)*100):0;
+  const olEvs=eventsForDate(S.date);
+  const isT=S.date===todayStr();
+
+  const stampLabel=!e.kommen?`▶  KOMMEN stempeln  (${nowTime()})`:!e.gehen?`◼  GEHEN stempeln  (${nowTime()})`:'✓  Beide Stempel gesetzt';
+  const stampCls=!e.kommen?'bn':!e.gehen?'br':'bg';
+
+  const nettoStr=wm!==null?fromMins(wm):'–:––';
+  const nettoCol=wm!==null?(wm>=soll?'cgrn':'cgold'):'txt3';
+
+  return `
+  <div class="dnav">
+    <button class="na" onclick="prevDay()">‹</button>
+    <div class="dtitle">${fmtDay(S.date)}${isT?' <span style="color:var(--gold);font-size:9px">● HEUTE</span>':''}</div>
+    <button class="na" onclick="nextDay()">›</button>
+    ${S.date!==todayStr()?`<button class="na bg" onclick="goToday()">Heute</button>`:''}
+  </div>
+
+  <div class="sgrid">
+    <div class="sc"><div class="sl">⏱ HEUTE NETTO</div><div class="sv ${nettoCol}" id="netto-disp">${nettoStr}</div><div class="ss">Soll: ${fromMins(soll)}</div></div>
+    <div class="sc"><div class="sl">📊 ZA GESAMT</div><div class="sv ${za>=0?'cgrn':'cred'}">${za>=0?'+':''}${fromMins(Math.abs(za))}</div><div class="ss">${za>=0?'Überstunden':'Minderstunden'}</div></div>
+    <div class="sc"><div class="sl">🌴 URLAUB</div><div class="sv cblu">${vu} / ${S.settings.urlaubsTage}</div><div class="ss">${Math.max(0,S.settings.urlaubsTage-vu)} Tage verbleibend</div></div>
+    <div class="sc"><div class="sl">📅 WOCHE KW${kw(S.date)}</div><div class="sv ${wkTotal>=wkSoll?'cgrn':'cgold'}">${fromMins(wkTotal)}</div><div class="ss">Soll: ${fromMins(wkSoll)}</div></div>
+  </div>
+
+  <div class="card">
+    <div class="ctitle">STEMPELUHR</div>
+    <div class="row2" style="margin-bottom:12px">
+      <div><div class="fl">KOMMEN</div><input type="time" id="inp-kommen" value="${e.kommen||''}" onchange="setField('kommen',this.value)"></div>
+      <div><div class="fl">GEHEN</div><input type="time" id="inp-gehen" value="${e.gehen||''}" onchange="setField('gehen',this.value)"></div>
+      <div><div class="fl">PAUSE</div><input type="time" id="inp-pause" value="${e.pause||''}" onchange="setField('pause',this.value)"></div>
+      <div><div class="fl">NETTO</div><div class="sv ${nettoCol}" style="font-size:22px;padding-top:5px" id="netto-disp2">${nettoStr}</div></div>
+    </div>
+    <div style="margin-bottom:13px">
+      <div class="fl">NOTIZ / TÄTIGKEITEN</div>
+      <input type="text" placeholder="Projekte, Besprechungen, Bemerkungen…" value="${(e.note||'').replace(/"/g,'&quot;')}" onblur="setField('note',this.value)" style="padding:8px 10px">
+    </div>
+    <button class="stamp ${stampCls}" onclick="stampNow()">${stampLabel}</button>
+    ${wm!==null?`
+    <div class="ptrack" style="margin-top:11px">
+      <div class="pfill" style="width:${pct}%;background:${wm>=soll?'var(--grn)':'var(--gold)'}"></div>
+    </div>
+    <div style="display:flex;justify-content:space-between;font-size:9px;color:var(--txt3);margin-top:4px"><span>0:00</span><span>${fromMins(soll)}</span></div>
+    `:''}
+  </div>
+
+  ${olEvs.length>0?`
+  <div class="card">
+    <div class="ctitle">📅 OUTLOOK TERMINE HEUTE</div>
+    ${olEvs.map(ev=>`<div class="ev"><div class="evt">${fmtEvTime(ev)}</div><div class="evu">${ev.subject}</div></div>`).join('')}
+  </div>
+  `:''}
+
+  ${S.olConnected&&olEvs.length===0?'':''}
+  `;
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// RENDER — WEEK
+// ═══════════════════════════════════════════════════════════════════
+function viewWeek() {
+  const dates=weekDates(S.wkAnchor);
+  const soll=S.settings.sollStunden*60;
+  const wkSoll=dates.filter(d=>!isWE(d)).length*soll;
+  const wkIst=dates.reduce((a,d)=>{const m=workMins(S.entries[d]||{});return m?a+m:a},0);
+  const kwNo=kw(dates[0]);
+  const td=todayStr();
+  const WDAY=['Mo','Di','Mi','Do','Fr','Sa','So'];
+
+  const olWeekEvs=S.olConnected?dates.map(d=>eventsForDate(d)).flat():[];
+
+  return `
+  <div class="dnav">
+    <button class="na" onclick="prevWeek()">‹ Vorwoche</button>
+    <div class="dtitle">KW ${kwNo} &nbsp;·&nbsp; ${fmtShortDay(dates[0])} – ${fmtShortDay(dates[6])}</div>
+    <button class="na" onclick="nextWeek()">Nächste ›</button>
+    ${S.wkAnchor!==todayStr()?`<button class="na bg" onclick="S.wkAnchor=todayStr();render()">Aktuelle KW</button>`:''}
+  </div>
+
+  <div class="tbl">
+    <div class="th wc"><span>TAG</span><span>KOMMEN</span><span>GEHEN</span><span>PAUSE</span><span>NETTO</span></div>
+    ${dates.map((d,i)=>{
+      const e=S.entries[d]||{};
+      const m=workMins(e);
+      const vac=S.absences.find(v=>d>=v.from_date&&d<=v.to_date);
+      const we=isWE(d);
+      const isT=d===td;
+      const mcls=m!==null?(m>=soll?'cgrn':m>0?'cgold':'cred'):'';
+      return `<div class="tr wc${we?' wke':''}${isT?' tod':''}" onclick="${!we?`S.date='${d}';S.view='today';render()`:''}">
+        <span style="font-size:12px;${isT?'color:var(--gold);font-weight:700':'color:var(--txt)'}">${WDAY[i]} ${p(new Date(d).getDate())}.<span class="kw" style="margin-left:5px">${i===0?`KW${kwNo}`:''}</span></span>
+        <span style="color:var(--gold);font-size:12px">${vac?`<span class="badge ${absenceBadge(vac.type)}">${vac.type}</span>`:e.kommen||'–'}</span>
+        <span style="color:var(--gold);font-size:12px">${vac?'':e.gehen||'–'}</span>
+        <span style="color:var(--txt3);font-size:12px">${e.pause||'–'}</span>
+        <span class="${mcls}" style="font-size:12px;font-weight:700">${m!==null?fromMins(m):'–'}</span>
+      </div>`;
+    }).join('')}
+    <div class="totrow">
+      <span>Wochensumme</span>
+      <span class="${wkIst>=wkSoll?'cgrn':'cred'}" style="font-weight:700">${fromMins(wkIst)} / ${fromMins(wkSoll)} &nbsp;(${fromMins(wkIst-wkSoll,true)})</span>
+    </div>
+  </div>
+
+  ${olWeekEvs.length>0?`
+  <div class="card">
+    <div class="ctitle">📅 OUTLOOK — DIESE WOCHE</div>
+    ${dates.map(d=>{
+      const evs=eventsForDate(d);
+      if(!evs.length) return '';
+      return `<div style="margin-bottom:10px"><div style="font-size:10px;color:var(--txt3);margin-bottom:5px">${fmtShortDay(d)}</div>${evs.map(ev=>`<div class="ev"><div class="evt">${fmtEvTime(ev)}</div><div class="evu">${ev.subject}</div></div>`).join('')}</div>`;
+    }).join('')}
+  </div>`:''}
+  `;
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// RENDER — MONTH
+// ═══════════════════════════════════════════════════════════════════
+function viewMonth() {
+  const dates=monthDates(S.year, S.month);
+  const soll=S.settings.sollStunden*60;
+  const { ist, sollT, diff } = monthStats(S.year, S.month);
+  const td=todayStr();
+  const WDAY=['So','Mo','Di','Mi','Do','Fr','Sa'];
+  const worked=dates.filter(d=>S.entries[d]?.kommen).length;
+
+  // Group by KW
+  const kwMap={};
+  dates.forEach(d=>{
+    if(isWE(d)) return;
+    const k=kw(d);
+    if(!kwMap[k]) kwMap[k]=d;
+  });
+
+  return `
+  <div class="dnav">
+    <button class="na" onclick="prevMonth()">‹</button>
+    <div class="dtitle">${MONTHS[S.month]} ${S.year}</div>
+    <button class="na" onclick="nextMonth()">›</button>
+  </div>
+
+  <div class="sgrid">
+    <div class="sc"><div class="sl">⏱ MONAT IST</div><div class="sv cgold">${fromMins(ist)}</div><div class="ss">Soll: ${fromMins(sollT)}</div></div>
+    <div class="sc"><div class="sl">Δ DIFFERENZ</div><div class="sv ${diffColor(diff)}">${fromMins(diff,true)}</div><div class="ss">${diff>=0?'Überstunden':'Minderstunden'}</div></div>
+    <div class="sc"><div class="sl">📋 ARBEITSTAGE</div><div class="sv cblu">${worked}</div><div class="ss">erfasst</div></div>
+  </div>
+
+  <div class="tbl" id="month-tbl">
+    <div class="th mc"><span>KW</span><span>TAG</span><span>KOMMEN</span><span>GEHEN</span><span>PAUSE</span><span>NETTO</span></div>
+    ${dates.map(d=>{
+      const e=S.entries[d]||{};
+      const m=workMins(e);
+      const dw=new Date(d).getDay();
+      const we=isWE(d);
+      const isT=d===td;
+      const vac=S.absences.find(v=>d>=v.from_date&&d<=v.to_date);
+      const kwN=kw(d);
+      const showKw=kwMap[kwN]===d;
+      const mcls=m!==null?(m>=soll?'cgrn':m>0?'cgold':'cred'):'';
+      if(we&&!e.kommen&&!vac) return '';
+      return `<div class="tr mc${we?' wke':''}${isT?' tod':''}" onclick="${!we?`S.date='${d}';S.view='today';render()`:'' }">
+        <span>${showKw?`<span class="kw">KW${kwN}</span>`:''}</span>
+        <span style="font-size:12px;${isT?'color:var(--gold);font-weight:700':we?'color:var(--txt3)':'color:var(--txt)'}">${WDAY[dw]} ${p(new Date(d).getDate())}.</span>
+        <span style="color:var(--gold);font-size:12px">${vac?`<span class="badge ${absenceBadge(vac.type)}">${vac.type}</span>`:e.kommen||'–'}</span>
+        <span style="color:var(--gold);font-size:12px">${vac?'':e.gehen||'–'}</span>
+        <span style="color:var(--txt3);font-size:12px">${e.pause||'–'}</span>
+        <span class="${mcls}" style="font-size:12px;font-weight:700">${m!==null?fromMins(m):'–'}</span>
+      </div>`;
+    }).join('')}
+    <div class="totrow">
+      <span>Monatssumme</span>
+      <span class="${diffColor(diff)}" style="font-weight:700">${fromMins(ist)} / ${fromMins(sollT)} &nbsp;(${fromMins(diff,true)})</span>
+    </div>
+  </div>`;
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// RENDER — QUARTER
+// ═══════════════════════════════════════════════════════════════════
+function viewQuarter() {
+  const qMonths=[[0,1,2],[3,4,5],[6,7,8],[9,10,11]];
+  const qm=qMonths[S.quarter];
+  const qLabel=`Q${S.quarter+1} ${S.qYear}`;
+  const qRange=`${MONS[qm[0]]} – ${MONS[qm[2]]}`;
+
+  const qStats=qm.map(m=>({ m, ...monthStats(S.qYear,m) }));
+  const qIst=qStats.reduce((a,s)=>a+s.ist,0);
+  const qSoll=qStats.reduce((a,s)=>a+s.sollT,0);
+  const qDiff=qIst-qSoll;
+
+  const za=totalZA();
+
+  return `
+  <div class="dnav">
+    <button class="na" onclick="prevQYear()">‹ ${S.qYear-1}</button>
+    <div class="dtitle">${S.qYear}</div>
+    <button class="na" onclick="nextQYear()">${S.qYear+1} ›</button>
+  </div>
+
+  <div class="qtabs">
+    ${[0,1,2,3].map(q=>`<button class="qt${S.quarter===q?' qa':''}" onclick="S.quarter=${q};render()">Q${q+1} · ${MONS[q*3]}–${MONS[q*3+2]}</button>`).join('')}
+  </div>
+
+  <div class="sgrid" style="margin-bottom:16px">
+    <div class="sc"><div class="sl">⏱ ${qLabel} IST</div><div class="sv cgold">${fromMins(qIst)}</div><div class="ss">Soll: ${fromMins(qSoll)}</div></div>
+    <div class="sc"><div class="sl">Δ DIFFERENZ</div><div class="sv ${diffColor(qDiff)}">${fromMins(qDiff,true)}</div><div class="ss">${qRange}</div></div>
+    <div class="sc"><div class="sl">📊 ZA GESAMT</div><div class="sv ${za>=0?'cgrn':'cred'}">${fromMins(za,true)}</div><div class="ss">alle Zeiten</div></div>
+  </div>
+
+  <div class="tbl">
+    <div class="th qc"><span>MONAT</span><span>IST</span><span>SOLL</span><span>DIFFERENZ</span><span>WOCHEN</span></div>
+    ${qStats.map(s=>{
+      const dates=monthDates(S.qYear,s.m);
+      // Count KWs in month
+      const kwSet=new Set(dates.filter(d=>!isWE(d)).map(d=>kw(d)));
+      const kwStr=[...kwSet].map(k=>`KW${k}`).join(', ');
+      return `<div class="tr qc" onclick="S.month=${s.m};S.year=S.qYear;S.view='month';render()">
+        <span style="font-weight:700">${MONTHS[s.m]}</span>
+        <span class="cgold" style="font-weight:700">${fromMins(s.ist)}</span>
+        <span style="color:var(--txt2)">${fromMins(s.sollT)}</span>
+        <span class="${diffColor(s.diff)}" style="font-weight:700">${fromMins(s.diff,true)}</span>
+        <span class="mmt">${kwStr}</span>
+      </div>`;
+    }).join('')}
+    <div class="totrow">
+      <span style="font-weight:700">${qLabel} Gesamt</span>
+      <span class="${diffColor(qDiff)}" style="font-weight:700">${fromMins(qIst)} / ${fromMins(qSoll)} &nbsp;(${fromMins(qDiff,true)})</span>
+    </div>
+  </div>
+
+  <!-- KW Calendar -->
+  <div class="card">
+    <div class="ctitle">KALENDERWOCHEN IN ${qLabel}</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px">
+      ${qm.map(m=>{
+        const dates=monthDates(S.qYear,m);
+        const kwGroups={};
+        dates.forEach(d=>{
+          if(isWE(d)) return;
+          const k=kw(d);
+          if(!kwGroups[k]) kwGroups[k]=[];
+          kwGroups[k].push(d);
+        });
+        return `<div style="background:var(--sur2);border-radius:8px;padding:12px">
+          <div style="font-size:11px;color:var(--txt2);margin-bottom:8px;font-weight:700">${MONTHS[m]}</div>
+          ${Object.entries(kwGroups).map(([k,days])=>{
+            const ist=days.reduce((a,d)=>{const wm=workMins(S.entries[d]||{});return wm?a+wm:a},0);
+            const soll=days.length*S.settings.sollStunden*60;
+            return `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+              <span class="kw">KW${k}</span>
+              <span style="font-size:11px;color:var(--txt2)">${fmtShortDay(days[0])}–${fmtShortDay(days[days.length-1])}</span>
+              <span style="font-size:11px;${ist>=soll?'color:var(--grn)':'color:var(--gold)'};font-weight:700">${fromMins(ist)}</span>
+            </div>`;
+          }).join('')}
+        </div>`;
+      }).join('')}
+    </div>
+  </div>`;
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// RENDER — ABSENCES
+// ═══════════════════════════════════════════════════════════════════
+function viewAbsences() {
+  const vu=vacUsed();
+  const vr=Math.max(0,S.settings.urlaubsTage-vu);
+
+  return `
+  <div class="sgrid">
+    <div class="sc"><div class="sl">🌴 URLAUB GESAMT</div><div class="sv cblu">${S.settings.urlaubsTage}</div><div class="ss">Tage/Jahr</div></div>
+    <div class="sc"><div class="sl">✓ GENOMMEN</div><div class="sv cgold">${vu}</div><div class="ss">Arbeitstage</div></div>
+    <div class="sc"><div class="sl">◑ VERBLEIBEND</div><div class="sv ${vr>5?'cgrn':'cred'}">${vr}</div><div class="ss">Tage offen</div></div>
+  </div>
+
+  <div class="card">
+    <div class="ctitle">NEUE ABWESENHEIT EINTRAGEN</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+      <div><div class="fl">VON</div><input type="date" id="ab-from"></div>
+      <div><div class="fl">BIS</div><input type="date" id="ab-to"></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:13px">
+      <div><div class="fl">TYP</div>
+        <select id="ab-type">
+          <option>Urlaub</option>
+          <option>ZA (Zeitausgleich)</option>
+          <option>Krankenstand</option>
+          <option>Feiertag</option>
+          <option>Homeoffice</option>
+          <option>Sonstiges</option>
+        </select>
+      </div>
+      <div><div class="fl">NOTIZ (optional)</div><input type="text" id="ab-note" placeholder="Beschreibung…"></div>
+    </div>
+    <button class="btn bg" onclick="addAbsence()">+ Abwesenheit eintragen</button>
+  </div>
+
+  <div class="tbl">
+    ${S.absences.length===0?`<div style="padding:28px;text-align:center;color:var(--txt3);font-size:13px">Keine Abwesenheiten eingetragen</div>`:''}
+    ${S.absences.map((ab,i)=>`
+      <div class="tr" style="display:flex;align-items:center;justify-content:space-between;cursor:default" >
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+          <span class="badge ${absenceBadge(ab.type)}">${ab.type}</span>
+          <span style="font-size:12px">${fmtDay(ab.from_date)} – ${fmtDay(ab.to_date)}</span>
+          ${ab.note?`<span style="color:var(--txt3);font-size:12px">${ab.note}</span>`:''}
+        </div>
+        <button class="bdel" onclick="delAbsence('${ab.id}')">✕</button>
+      </div>`).join('')}
+  </div>`;
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// RENDER — OUTLOOK
+// ═══════════════════════════════════════════════════════════════════
+function viewOutlook() {
+  return `
+  <div class="info" style="margin-bottom:16px">
+    <strong style="color:var(--blu)">📅 Outlook / Microsoft 365 Integration</strong><br><br>
+    Um deinen Kalender (Urlaube, Termine, Meetings) hier zu sehen, brauchst du einmalig eine kostenlose <strong>Azure App-Registrierung</strong>.
+    Deine Daten bleiben immer bei Microsoft — die App liest nur.
+  </div>
+
+  ${S.olConnected?`
+  <div class="card" style="border-color:rgba(92,214,160,.3)">
+    <div class="ctitle" style="color:var(--grn)">✓ OUTLOOK VERBUNDEN</div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
+      <button class="btn bn" onclick="fetchOlEvents().then(()=>{toast('Aktualisiert ✓');render()})">↻ Kalender aktualisieren</button>
+      <button class="btn br" onclick="olToken=null;S.olConnected=false;S.olEvents=[];render()">Trennen</button>
+    </div>
+    <div style="margin-top:14px;color:var(--txt2);font-size:13px">${S.olEvents.length} Termine geladen</div>
+  </div>
+  `:`
+  <div class="card">
+    <div class="ctitle">SCHRITT-FÜR-SCHRITT EINRICHTUNG</div>
+    <div class="step"><div class="snum">1</div><div><div class="stit">Azure Portal öffnen</div><div class="sdsc">Gehe zu <a href="https://portal.azure.com/#view/Microsoft_AAD_RegisteredApps/ApplicationsListBlade" target="_blank">portal.azure.com → App-Registrierungen ↗</a> und melde dich mit dem Microsoft-Konto an, das du für Outlook nutzt.</div></div></div>
+    <div class="step"><div class="snum">2</div><div><div class="stit">Neue App registrieren</div><div class="sdsc">Klicke „Neue Registrierung" → Name: z.B. <code>Arbeitszeit App</code> → Kontotypen: <code>Einzelmandant</code> → Redirect URI: <code>Einzelseitenanwendung (SPA)</code> → deine GitHub Pages URL eintragen (z.B. <code>https://deinname.github.io/arbeitszeit/</code>).</div></div></div>
+    <div class="step"><div class="snum">3</div><div><div class="stit">Berechtigungen hinzufügen</div><div class="sdsc">Im linken Menü: „API-Berechtigungen" → „Berechtigung hinzufügen" → „Microsoft Graph" → Delegiert → <code>Calendars.Read</code> und <code>User.Read</code> auswählen → Speichern.</div></div></div>
+    <div class="step"><div class="snum">4</div><div><div class="stit">Client-ID in Einstellungen eintragen</div><div class="sdsc">Gehe zu „Übersicht" der App → kopiere die <strong>Anwendungs-ID (Client-ID)</strong> → trage sie in Einstellungen → Outlook Client ID ein → Speichern.</div></div></div>
+  </div>
+  `}
+
+  <div class="card">
+    <div class="ctitle">VERBINDUNG HERSTELLEN</div>
+    <div style="margin-bottom:13px;color:var(--txt2);font-size:13px">
+      Client-ID hinterlegt in Einstellungen: <code>${S.settings.outlookClientId||'– nicht eingetragen'}</code>
+    </div>
+    <button class="btn bb" onclick="connectOutlook()">🔐 Mit Microsoft Konto verbinden</button>
+  </div>
+
+  ${S.olEvents.length>0?`
+  <div class="card">
+    <div class="ctitle">GELADENE TERMINE (${S.olEvents.length})</div>
+    ${S.olEvents.slice(0,15).map(ev=>`
+      <div class="ev">
+        <div class="evt">${(ev.start.dateTime||ev.start.date||'').slice(0,10)} ${ev.isAllDay?'':fmtEvTime(ev)}</div>
+        <div class="evu">${ev.subject}</div>
+      </div>`).join('')}
+    ${S.olEvents.length>15?`<div style="color:var(--txt3);font-size:12px;margin-top:8px">… und ${S.olEvents.length-15} weitere</div>`:''}
+  </div>`:''}`;
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// RENDER — SETTINGS
+// ═══════════════════════════════════════════════════════════════════
+function viewSettings() {
+  const configured=CONFIG.supabaseUrl!=='DEINE_SUPABASE_URL';
+
+  return `
+  ${!configured?`<div class="warn"><strong style="color:var(--red)">⚠ Supabase nicht konfiguriert</strong><br>Die App speichert Daten momentan nur temporär. Trage deine Supabase URL und den Anon Key in der Datei index.html unter <code>CONFIG</code> ein und lade die Seite neu.</div>`:''}
+
+  <div class="card">
+    <div class="ctitle">PERSÖNLICHE EINSTELLUNGEN</div>
+    <div class="row2" style="margin-bottom:12px">
+      <div><div class="fl">DEIN NAME</div><input type="text" id="s-name" value="${S.settings.name}" placeholder="Max Mustermann"></div>
+      <div><div class="fl">SOLL-STUNDEN / TAG</div><input type="number" id="s-soll" value="${S.settings.sollStunden}" min="1" max="24" step="0.5" style="width:120px"></div>
+    </div>
+    <div class="row2" style="margin-bottom:16px">
+      <div><div class="fl">URLAUBSTAGE / JAHR</div><input type="number" id="s-urlaub" value="${S.settings.urlaubsTage}" min="1" max="60" style="width:120px"></div>
+      <div><div class="fl">OUTLOOK CLIENT ID (AZURE)</div><input type="text" id="s-olcid" value="${S.settings.outlookClientId}" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"></div>
+    </div>
+    <button class="btn bn" onclick="saveSettings()">💾 Einstellungen speichern</button>
+  </div>
+
+  <div class="card">
+    <div class="ctitle">DATEN EXPORTIEREN</div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
+      <button class="btn bg" onclick="exportCSV()">↓ Als CSV exportieren</button>
+    </div>
+    <div style="margin-top:10px;color:var(--txt3);font-size:12px">${Object.keys(S.entries).length} Einträge gespeichert</div>
+  </div>
+
+  <div class="card">
+    <div class="ctitle">📱 ALS APP INSTALLIEREN</div>
+    <div style="color:var(--txt2);font-size:13px;line-height:1.7">
+      <strong>iPhone / iPad (Safari):</strong> Teilen-Symbol → „Zum Home-Bildschirm" → dann öffnet sie sich wie eine native App.<br>
+      <strong>Android (Chrome):</strong> Drei-Punkte-Menü → „App installieren".<br>
+      <strong>PC / Notebook:</strong> In Chrome/Edge: Adressleiste rechts → Install-Symbol.
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="ctitle" style="color:var(--red)">DATEN ZURÜCKSETZEN</div>
+    <div style="color:var(--txt2);font-size:13px;margin-bottom:13px">Löscht alle Zeiteinträge und Abwesenheiten permanent aus Supabase.</div>
+    <button class="btn br" onclick="resetData()">✕ Alle Daten löschen</button>
+  </div>`;
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// RENDER — ROUTER
+// ═══════════════════════════════════════════════════════════════════
+function render() {
+  const views={ today:viewToday, week:viewWeek, month:viewMonth, quarter:viewQuarter, absences:viewAbsences, outlook:viewOutlook, settings:viewSettings };
+  document.getElementById('view').innerHTML = (views[S.view]||viewToday)();
+  // Update nav
+  document.querySelectorAll('.nb').forEach(b => b.classList.toggle('act', b.dataset.v===S.view));
+  // Update username
+  document.getElementById('uname').textContent = S.settings.name ? `· ${S.settings.name}` : '';
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// HANDLERS
+// ═══════════════════════════════════════════════════════════════════
+
+// Navigation
+document.getElementById('nav').addEventListener('click', e=>{
+  const v=e.target.dataset?.v;
+  if(v){ S.view=v; render(); }
+});
+
+// Day navigation
+function prevDay() { const d=new Date(S.date); d.setDate(d.getDate()-1); S.date=d.toISOString().slice(0,10); render(); }
+function nextDay() { const d=new Date(S.date); d.setDate(d.getDate()+1); S.date=d.toISOString().slice(0,10); render(); }
+function goToday() { S.date=todayStr(); render(); }
+
+// Week navigation
+function prevWeek() { const d=new Date(S.wkAnchor); d.setDate(d.getDate()-7); S.wkAnchor=d.toISOString().slice(0,10); render(); }
+function nextWeek() { const d=new Date(S.wkAnchor); d.setDate(d.getDate()+7); S.wkAnchor=d.toISOString().slice(0,10); render(); }
+
+// Month navigation
+function prevMonth() { S.month--; if(S.month<0){S.month=11;S.year--;} render(); }
+function nextMonth() { S.month++; if(S.month>11){S.month=0;S.year++;} render(); }
+
+// Quarter/Year navigation
+function prevQYear() { S.qYear--; render(); }
+function nextQYear() { S.qYear++; render(); }
+
+// Stamp in/out
+function stampNow() {
+  const e=S.entries[S.date]||{};
+  const t=nowTime();
+  if(!e.kommen) {
+    setField('kommen',t);
+    toast(`Kommen gestempelt: ${t}`);
+  } else if(!e.gehen) {
+    setField('gehen',t);
+    toast(`Gehen gestempelt: ${t}`);
+  } else {
+    toast('Beide Stempel bereits gesetzt','err');
+  }
+}
+
+// Set a field in today's entry
+function setField(field, value) {
+  if(!S.entries[S.date]) S.entries[S.date]={};
+  S.entries[S.date][field]=value;
+  // Update netto display without full re-render
+  const e=S.entries[S.date];
+  const wm=workMins(e);
+  const nettoStr=wm!==null?fromMins(wm):'–:––';
+  const soll=S.settings.sollStunden*60;
+  ['netto-disp','netto-disp2'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el){ el.textContent=nettoStr; el.className='sv '+(wm!==null?(wm>=soll?'cgrn':'cgold'):''); }
+  });
+  dbSaveEntry(S.date);
+}
+
+// Add absence
+async function addAbsence() {
+  const from=document.getElementById('ab-from')?.value;
+  const to=document.getElementById('ab-to')?.value;
+  const type=document.getElementById('ab-type')?.value;
+  const note=document.getElementById('ab-note')?.value;
+  if(!from||!to){ toast('Bitte Datum ausfüllen','err'); return; }
+  if(from>to){ toast('Startdatum muss vor Enddatum liegen','err'); return; }
+  const data=await dbSaveAbsence({from,to,type,note});
+  if(data) S.absences.unshift(data);
+  else S.absences.unshift({id:Date.now().toString(),from_date:from,to_date:to,type,note});
+  toast('Abwesenheit eingetragen ✓');
+  render();
+}
+
+// Delete absence
+async function delAbsence(id) {
+  await dbDeleteAbsence(id);
+  S.absences=S.absences.filter(a=>a.id!==id);
+  toast('Gelöscht');
+  render();
+}
+
+// Save settings
+async function saveSettings() {
+  S.settings.name         = document.getElementById('s-name')?.value||'';
+  S.settings.sollStunden  = parseFloat(document.getElementById('s-soll')?.value)||8;
+  S.settings.urlaubsTage  = parseInt(document.getElementById('s-urlaub')?.value)||25;
+  S.settings.outlookClientId = document.getElementById('s-olcid')?.value||'';
+  await dbSaveSettings();
+  if(S.settings.outlookClientId && typeof msal!=='undefined') initMSAL(S.settings.outlookClientId);
+  toast('Einstellungen gespeichert ✓');
+  render();
+}
+
+// Export CSV
+function exportCSV() {
+  const rows=['Datum;Wochentag;KW;Quartal;Kommen;Gehen;Pause;Netto (Min);Netto (Std);Notiz'];
+  const WDAY=['So','Mo','Di','Mi','Do','Fr','Sa'];
+  Object.entries(S.entries).sort(([a],[b])=>a.localeCompare(b)).forEach(([date,e])=>{
+    const wm=workMins(e);
+    const d=new Date(date);
+    const q='Q'+(Math.floor(d.getMonth()/3)+1);
+    rows.push([date,WDAY[d.getDay()],`KW${kw(date)}`,q,e.kommen||'',e.gehen||'',e.pause||'',wm??'',wm!=null?(wm/60).toFixed(2):'',e.note||''].join(';'));
+  });
+  const blob=new Blob(['\uFEFF'+rows.join('\n')],{type:'text/csv;charset=utf-8;'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a'); a.href=url; a.download='arbeitszeiten.csv'; a.click();
+  toast('CSV exportiert ✓');
+}
+
+// Reset data
+async function resetData() {
+  if(!confirm('Wirklich ALLE Daten permanent löschen? Das kann nicht rückgängig gemacht werden!')) return;
+  if(DB) {
+    await Promise.all([
+      DB.from('time_entries').delete().neq('date','9999-99-99'),
+      DB.from('absences').delete().neq('id','00000000-0000-0000-0000-000000000000'),
+    ]);
+  }
+  S.entries={}; S.absences=[];
+  toast('Alle Daten gelöscht','err');
+  render();
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// CLOCK
+// ═══════════════════════════════════════════════════════════════════
+function updateClock() {
+  const el=document.getElementById('clock');
+  if(el) el.textContent=nowTime();
+}
+updateClock();
+setInterval(updateClock, 10000);
+
+// ═══════════════════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════════════════
+async function init() {
+  // Set quarter to current
+  S.quarter=Math.floor(new Date().getMonth()/3);
+  S.qYear=new Date().getFullYear();
+
+  const ok=await dbInit();
+  if(ok) {
+    await dbLoad();
+    toast('Daten geladen ✓');
+  } else {
+    toast('Supabase-Konfiguration fehlt — bitte CONFIG in index.html anpassen','err');
+  }
+  render();
+}
+
+init();
+</script>
+</body>
+</html>
