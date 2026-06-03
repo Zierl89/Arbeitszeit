@@ -129,7 +129,11 @@ select{width:100%}
 
 /* ═══ PROGRESS ═════════════════════════════════════════════════════ */
 .ptrack{height:5px;background:rgba(255,255,255,0.06);border-radius:3px;overflow:hidden;margin-top:8px}
-.pfill{height:100%;border-radius:3px;transition:width .5s ease}
+.pfill{height:100%;border-radius:3px;transition:width .5s ease;position:relative;overflow:hidden}
+
+@keyframes wave-sweep{0%{left:-70%}100%{left:130%}}
+.pfill-live{background:var(--live)!important}
+.pfill-live::after{content:'';position:absolute;top:0;bottom:0;left:-70%;width:65%;background:linear-gradient(90deg,transparent 0%,rgba(255,255,255,.55) 45%,rgba(255,255,255,.7) 50%,rgba(255,255,255,.55) 55%,transparent 100%);animation:wave-sweep 1.9s ease-in-out infinite}
 
 /* ═══ OUTLOOK EVENTS ═══════════════════════════════════════════════ */
 .ev{display:flex;gap:10px;padding:7px 11px;background:rgba(126,184,245,.06);border-left:2px solid var(--blu);border-radius:0 6px 6px 0;margin-bottom:5px;align-items:flex-start}
@@ -202,8 +206,7 @@ select{width:100%}
 .tog input:checked+.tog-sl:before{transform:translateX(16px)}
 
 /* ═══ SHIMMER / ANIMATIONS ═════════════════════════════════════════ */
-@keyframes shimmer{0%{background-position:-300% 0}100%{background-position:300% 0}}
-.pfill-live{background:linear-gradient(90deg,#22b8a8 0%,#3de8d8 30%,#9cfff4 50%,#3de8d8 70%,#22b8a8 100%)!important;background-size:300% 100%!important;animation:shimmer 2.4s ease-in-out infinite}
+/* wave animation is defined with .pfill-live::after above */
 @keyframes ripple{0%{transform:scale(0);opacity:.6}100%{transform:scale(3.5);opacity:0}}
 @keyframes ripple2{0%{transform:scale(0);opacity:.3}100%{transform:scale(5.5);opacity:0}}
 @keyframes stamp-pop{0%{transform:scale(.3);opacity:0}40%{transform:scale(1.1);opacity:1}100%{transform:scale(1);opacity:1}}
@@ -769,6 +772,7 @@ function viewToday() {
       <input type="text" placeholder="Projekte, Besprechungen, Bemerkungen…" value="${(e.note||'').replace(/"/g,'&quot;')}" onblur="setField('note',this.value)" style="padding:8px 10px">
     </div>
     ${fei?`<button class="stamp bg" style="opacity:.4;cursor:not-allowed">🎉 Feiertag — ${feiertagName(S.date)}</button>`:`<button class="stamp ${stampCls}" onclick="stampNow()">${stampLabel}</button>`}
+    ${(e.kommen||e.gehen||e.note)?`<div style="display:flex;justify-content:flex-end;margin-top:8px"><button class="btn br" onclick="resetDay('${S.date}')" style="font-size:11px;padding:5px 14px">↺ Tag zurücksetzen</button></div>`:''}
     ${wm!==null&&daySoll>0?`
     <div class="ptrack" style="margin-top:11px">
       <div class="${isLive?'pfill pfill-live':'pfill'}" style="width:${pct}%;${!isLive?`background:${wm>=daySoll?'var(--grn)':'var(--gold)'}`:''};border-radius:3px"></div>
@@ -1118,7 +1122,7 @@ function viewSettings() {
     <div class="ctitle">PERSÖNLICHE EINSTELLUNGEN</div>
     <div class="row2" style="margin-bottom:12px">
       <div><div class="fl">DEIN NAME</div><input type="text" id="s-name" value="${S.settings.name}" placeholder="Max Mustermann"></div>
-      <div><div class="fl">URLAUBSSTUNDEN / JAHR</div><input type="number" id="s-urlaub" value="${(S.settings.urlaubsStunden||200).toFixed(2)}" min="1" max="500" step="0.5" style="width:140px"><div style="font-size:11px;color:var(--txt3);margin-top:3px">Standard: 25 Tage ≈ 192,50h</div></div>
+      <div><div class="fl">URLAUBSSTUNDEN / JAHR</div><input type="number" id="s-urlaub" value="${(S.settings.urlaubsStunden||200).toFixed(2)}" min="1" max="500" step="0.01" style="width:140px"><div style="font-size:11px;color:var(--txt3);margin-top:3px">Standard: 25 Tage ≈ 192,50h</div></div>
     </div>
     <div class="row2" style="margin-bottom:12px">
       <div>
@@ -1180,10 +1184,29 @@ document.getElementById('nav').addEventListener('click', e=>{
   if(v){ S.view=v; render(); }
 });
 
+// ── Auto-fill für Feiertage und Abwesenheiten ───────────────────
+function fillEntryIfMissing(date) {
+  const daySoll = getDaySoll(date);
+  if (daySoll === 0) return; // Wochenende
+  if (!S.entries[date]) S.entries[date] = {};
+  const e = S.entries[date];
+  if (e.kommen) return; // bereits ausgefüllt
+  // Nur ausfüllen wenn Feiertag ODER wenn eine Abwesenheit gesetzt ist
+  const isHoliday = isFeiertag(date);
+  const hasAbsence = S.absences.find(a => a.from_date === date && a.to_date === date &&
+    ['Urlaub','ZA (Zeitausgleich)','Krankenstand','Sonstiges'].includes(a.type));
+  if (!isHoliday && !hasAbsence) return;
+  const gehenMins = toMins('07:30') + daySoll + 15;
+  e.kommen = '07:30';
+  e.gehen = p(Math.floor(gehenMins/60)) + ':' + p(gehenMins%60);
+  e.pause = '00:15';
+  dbSaveEntry(date); // async fire & forget
+}
+
 // Day navigation
-function prevDay() { const d=new Date(S.date); d.setDate(d.getDate()-1); S.date=d.toISOString().slice(0,10); render(); }
-function nextDay() { const d=new Date(S.date); d.setDate(d.getDate()+1); S.date=d.toISOString().slice(0,10); render(); }
-function goToday() { S.date=todayStr(); render(); }
+function prevDay() { const d=new Date(S.date); d.setDate(d.getDate()-1); S.date=d.toISOString().slice(0,10); fillEntryIfMissing(S.date); render(); }
+function nextDay() { const d=new Date(S.date); d.setDate(d.getDate()+1); S.date=d.toISOString().slice(0,10); fillEntryIfMissing(S.date); render(); }
+function goToday() { S.date=todayStr(); fillEntryIfMissing(S.date); render(); }
 
 // Week navigation
 function prevWeek() { const d=new Date(S.wkAnchor); d.setDate(d.getDate()-7); S.wkAnchor=d.toISOString().slice(0,10); render(); }
@@ -1263,17 +1286,16 @@ async function quickSetAbsence(date, type) {
   const data=await dbSaveAbsence({from:date,to:date,type,note:''});
   if(data) S.absences.unshift(data);
   else S.absences.unshift({id:Date.now().toString(),from_date:date,to_date:date,type,note:''});
-  // Auto-fill Standard-Arbeitszeiten (außer Homeoffice)
+  // Auto-fill Standard-Arbeitszeiten für alle Abwesenheitstypen (außer Homeoffice)
   if(['Urlaub','ZA (Zeitausgleich)','Krankenstand','Sonstiges'].includes(type)){
     const daySoll=getDaySoll(date);
     if(daySoll>0){
       if(!S.entries[date]) S.entries[date]={};
       const e=S.entries[date];
-      if(!e.kommen){
-        const gehenMins=toMins('07:30')+daySoll+15;
-        e.kommen='07:30'; e.gehen=p(Math.floor(gehenMins/60))+':'+p(gehenMins%60); e.pause='00:15';
-        await dbSaveEntry(date);
-      }
+      // Immer ausfüllen (überschreibe leere oder falsche Einträge)
+      const gehenMins=toMins('07:30')+daySoll+15;
+      e.kommen='07:30'; e.gehen=p(Math.floor(gehenMins/60))+':'+p(gehenMins%60); e.pause='00:15';
+      await dbSaveEntry(date);
     }
   }
   toast(`${type} eingetragen ✓`);
@@ -1292,6 +1314,19 @@ function addPause(mins) {
 }
 function resetPause() {
   setField('pause','');
+  render();
+}
+
+// Tag vollständig zurücksetzen
+async function resetDay(date) {
+  if(!confirm(`Tag ${fmtDay(date)} zurücksetzen?\n\nAlle Einträge (Kommen, Gehen, Pause, Notiz) und der Tagesstatus werden gelöscht.`)) return;
+  // Eintrag aus Supabase löschen
+  if(DB) await DB.from('time_entries').delete().eq('date', date);
+  delete S.entries[date];
+  // Einzeltags-Abwesenheit entfernen
+  const existing=S.absences.find(a=>a.from_date===date&&a.to_date===date);
+  if(existing){ await dbDeleteAbsence(existing.id); S.absences=S.absences.filter(a=>a.id!==existing.id); }
+  toast('Tag zurückgesetzt ✓');
   render();
 }
 
@@ -1709,6 +1744,7 @@ async function init() {
   const ok=await dbInit();
   if(ok) {
     await dbLoad();
+    fillEntryIfMissing(S.date); // Heutiges Datum auto-befüllen falls Feiertag
     toast('Daten geladen ✓');
   } else {
     toast('Supabase-Konfiguration fehlt — bitte CONFIG in index.html anpassen','err');
