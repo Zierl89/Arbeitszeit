@@ -201,6 +201,31 @@ select{width:100%}
 .tog input:checked+.tog-sl{background:var(--grn)}
 .tog input:checked+.tog-sl:before{transform:translateX(16px)}
 
+/* ═══ SHIMMER / ANIMATIONS ═════════════════════════════════════════ */
+@keyframes shimmer{0%{background-position:-300% 0}100%{background-position:300% 0}}
+.pfill-live{background:linear-gradient(90deg,#22b8a8 0%,#3de8d8 30%,#9cfff4 50%,#3de8d8 70%,#22b8a8 100%)!important;background-size:300% 100%!important;animation:shimmer 2.4s ease-in-out infinite}
+@keyframes ripple{0%{transform:scale(0);opacity:.6}100%{transform:scale(3.5);opacity:0}}
+@keyframes ripple2{0%{transform:scale(0);opacity:.3}100%{transform:scale(5.5);opacity:0}}
+@keyframes stamp-pop{0%{transform:scale(.3);opacity:0}40%{transform:scale(1.1);opacity:1}100%{transform:scale(1);opacity:1}}
+@keyframes stamp-fade{0%{opacity:1}65%{opacity:1}100%{opacity:0}}
+.stamp-overlay{position:fixed;inset:0;z-index:600;pointer-events:none;display:flex;align-items:center;justify-content:center;animation:stamp-fade 1.1s ease-out forwards}
+.stamp-ring{position:absolute;width:90px;height:90px;border-radius:50%;border:2px solid;animation:ripple .85s ease-out forwards}
+.stamp-ring2{animation:ripple2 1.1s ease-out .08s forwards}
+.stamp-lbl{font-family:'Space Mono',monospace;font-size:20px;font-weight:700;text-align:center;animation:stamp-pop .4s ease-out forwards;z-index:1;line-height:1.4}
+
+/* ═══ CUSTOM DROPDOWN ══════════════════════════════════════════════ */
+.cdd{position:relative;display:inline-block}
+.cdd-btn{background:rgba(255,255,255,.05);border:1px solid var(--bdr2);border-radius:6px;color:var(--txt3);font-family:var(--mono);font-size:10px;padding:4px 8px;cursor:pointer;white-space:nowrap;transition:all .15s;max-width:94px;display:flex;align-items:center;gap:4px;width:94px}
+.cdd-btn:hover{border-color:var(--gold3);color:var(--gold);background:var(--gold2)}
+.cdd-btn.has-val{border-color:rgba(147,197,253,.3);color:var(--blu);background:rgba(147,197,253,.08)}
+.cdd-chevron{font-size:8px;margin-left:auto;opacity:.5}
+.cdd-menu{position:absolute;right:0;top:calc(100% + 4px);background:#10131c;border:1px solid var(--bdr2);border-radius:9px;z-index:250;min-width:170px;box-shadow:0 8px 28px rgba(0,0,0,.6);overflow:hidden;display:none}
+.cdd-menu.open{display:block}
+.cdd-opt{padding:8px 14px;font-size:11px;color:var(--txt2);cursor:pointer;transition:background .12s;font-family:var(--mono)}
+.cdd-opt:hover{background:rgba(255,255,255,.05);color:var(--txt)}
+.cdd-opt.cdd-sel{color:var(--gold);background:var(--gold2);font-weight:700}
+.cdd-opt.cdd-rm{color:var(--red);border-top:1px solid var(--bdr);font-size:10px}
+
 /* ═══ PRINT / PDF ══════════════════════════════════════════════════ */
 @media print{
   body{background:#fff!important;color:#111!important;font-family:Arial,sans-serif!important}
@@ -746,7 +771,7 @@ function viewToday() {
     ${fei?`<button class="stamp bg" style="opacity:.4;cursor:not-allowed">🎉 Feiertag — ${feiertagName(S.date)}</button>`:`<button class="stamp ${stampCls}" onclick="stampNow()">${stampLabel}</button>`}
     ${wm!==null&&daySoll>0?`
     <div class="ptrack" style="margin-top:11px">
-      <div class="pfill" style="width:${pct}%;background:${isLive?'var(--live)':wm>=daySoll?'var(--grn)':'var(--gold)'}"></div>
+      <div class="${isLive?'pfill pfill-live':'pfill'}" style="width:${pct}%;${!isLive?`background:${wm>=daySoll?'var(--grn)':'var(--gold)'}`:''};border-radius:3px"></div>
     </div>
     <div style="display:flex;justify-content:space-between;font-size:9px;color:var(--txt3);margin-top:4px"><span>0:00</span><span>${fromMins(daySoll)}</span></div>
     `:''}
@@ -758,6 +783,9 @@ function viewToday() {
     ${olEvs.map(ev=>`<div class="ev"><div class="evt">${fmtEvTime(ev)}</div><div class="evu">${ev.subject}</div></div>`).join('')}
   </div>
   `:''}
+  <div style="display:flex;justify-content:flex-end;margin-top:4px">
+    <button class="btn bg" onclick="exportPDFDay('${S.date}')" style="font-size:11px">📄 Tagesnachweis PDF</button>
+  </div>
   `;}
 
 
@@ -800,12 +828,7 @@ function viewWeek() {
         <span style="color:var(--gold);font-size:12px">${fei||(!singleDayAb&&vac)?'':e.gehen||'–'}</span>
         <span style="color:var(--txt3);font-size:12px">${fei||(!singleDayAb&&vac)?'':e.pause||'–'}</span>
         <span class="${mcls}" style="font-size:12px;font-weight:700">${m!==null?fromMins(m):'–'}</span>
-        <span onclick="event.stopPropagation()">
-          <select class="qs" onchange="quickSetAbsence('${d}',this.value)" style="font-size:10px">
-            <option value="">–</option>
-            ${['Homeoffice','Urlaub','ZA (Zeitausgleich)','Krankenstand','Sonstiges'].map(t=>`<option value="${t}" ${singleDayAb?.type===t?'selected':''}>${t}</option>`).join('')}
-          </select>
-        </span>
+        <span onclick="event.stopPropagation()">${cddHTML(d, singleDayAb?.type||'')}</span>
         ${e.note?`<div style="grid-column:1/-1;padding:0 2px 7px;font-size:11px;color:var(--txt3);font-style:italic;line-height:1.4">✍ ${e.note.substring(0,90)}${e.note.length>90?'…':''}</div>`:''}
       </div>`;
     }).join('')}
@@ -813,6 +836,9 @@ function viewWeek() {
       <span>Wochensumme</span>
       <span class="${wkIst>=wkSoll?'cgrn':'cred'}" style="font-weight:700">${fromMins(wkIst)} / ${fromMins(wkSoll)} &nbsp;(${fromMins(wkIst-wkSoll,true)})</span>
     </div>
+  </div>
+  <div style="display:flex;justify-content:flex-end;margin-top:10px">
+    <button class="btn bg" onclick="exportPDFWeek('${S.wkAnchor}')" style="font-size:11px">📄 Wochennachweis PDF</button>
   </div>
 
   ${olWeekEvs.length>0?`
@@ -881,12 +907,7 @@ function viewMonth() {
         <span style="color:var(--gold);font-size:12px">${fei||(!singleDayAb&&vac)?'':e.gehen||'–'}</span>
         <span style="color:var(--txt3);font-size:12px">${fei||(!singleDayAb&&vac)?'':e.pause||'–'}</span>
         <span class="${mcls}" style="font-size:12px;font-weight:700">${m!==null?fromMins(m):'–'}</span>
-        <span onclick="event.stopPropagation()">
-          <select class="qs" onchange="quickSetAbsence('${d}',this.value)" style="font-size:10px">
-            <option value="">–</option>
-            ${['Homeoffice','Urlaub','ZA (Zeitausgleich)','Krankenstand','Sonstiges'].map(t=>`<option value="${t}" ${singleDayAb?.type===t?'selected':''}>${t}</option>`).join('')}
-          </select>
-        </span>
+        <span onclick="event.stopPropagation()">${cddHTML(d, singleDayAb?.type||'')}</span>
         ${e.note?`<div style="grid-column:1/-1;padding:0 2px 7px;font-size:11px;color:var(--txt3);font-style:italic;line-height:1.4">✍ ${e.note.substring(0,90)}${e.note.length>90?'…':''}</div>`:''}
       </div>`;
     }).join('')}
@@ -1182,29 +1203,79 @@ function stampNow() {
   const t=nowTime();
   if(!e.kommen) {
     setField('kommen',t);
-    toast(`Kommen gestempelt: ${t}`);
+    showStampAnimation('kommen',t);
     render();
   } else if(!e.gehen) {
     setField('gehen',t);
-    toast(`Gehen gestempelt: ${t}`);
+    showStampAnimation('gehen',t);
     render();
   } else {
     toast('Beide Stempel bereits gesetzt','err');
   }
 }
 
+// Stamp animation
+function showStampAnimation(type, time) {
+  const col = type==='kommen' ? '#5cd6a0' : '#f07070';
+  const icon = type==='kommen' ? '▶' : '◼';
+  const lbl = type==='kommen' ? 'Kommen' : 'Gehen';
+  const el = document.createElement('div');
+  el.className = 'stamp-overlay';
+  el.innerHTML = `
+    <div class="stamp-ring" style="border-color:${col}"></div>
+    <div class="stamp-ring stamp-ring2" style="border-color:${col}"></div>
+    <div class="stamp-lbl" style="color:${col}">${icon} ${lbl}<br><span style="font-size:28px">${time}</span></div>`;
+  document.body.appendChild(el);
+  setTimeout(()=>el.remove(), 1200);
+}
+
+// Custom dropdown helper
+function cddHTML(date, activeType) {
+  const types = ['Homeoffice','Urlaub','ZA (Zeitausgleich)','Krankenstand','Sonstiges'];
+  const id = `cdd-${date.replace(/-/g,'')}`;
+  const label = activeType ? activeType.substring(0,11) : '–';
+  const hasVal = !!activeType;
+  return `<div class="cdd" id="${id}">
+    <button class="cdd-btn${hasVal?' has-val':''}" onclick="toggleCDD('${id}',event)">
+      <span style="overflow:hidden;text-overflow:ellipsis">${label}</span>
+      <span class="cdd-chevron">▾</span>
+    </button>
+    <div class="cdd-menu">
+      ${types.map(t=>`<div class="cdd-opt${activeType===t?' cdd-sel':''}" onclick="quickSetAbsence('${date}','${t}');closeCDDs()">${t}</div>`).join('')}
+      ${hasVal?`<div class="cdd-opt cdd-rm" onclick="quickSetAbsence('${date}','');closeCDDs()">✕ Entfernen</div>`:''}
+    </div>
+  </div>`;
+}
+function toggleCDD(id, event) {
+  event.stopPropagation();
+  document.querySelectorAll('.cdd-menu.open').forEach(m=>{ if(m.parentElement.id!==id) m.classList.remove('open'); });
+  const menu = document.querySelector(`#${id} .cdd-menu`);
+  if(menu) menu.classList.toggle('open');
+}
+function closeCDDs() { document.querySelectorAll('.cdd-menu.open').forEach(m=>m.classList.remove('open')); }
+
 // Quick absence set/remove directly from views
 async function quickSetAbsence(date, type) {
-  // Remove existing single-day absence for this date
+  closeCDDs();
   const existing=S.absences.find(a=>a.from_date===date&&a.to_date===date);
-  if(existing) {
-    await dbDeleteAbsence(existing.id);
-    S.absences=S.absences.filter(a=>a.id!==existing.id);
-  }
-  if(!type) { toast('Status entfernt'); render(); return; }
+  if(existing){ await dbDeleteAbsence(existing.id); S.absences=S.absences.filter(a=>a.id!==existing.id); }
+  if(!type){ toast('Status entfernt'); render(); return; }
   const data=await dbSaveAbsence({from:date,to:date,type,note:''});
   if(data) S.absences.unshift(data);
   else S.absences.unshift({id:Date.now().toString(),from_date:date,to_date:date,type,note:''});
+  // Auto-fill Standard-Arbeitszeiten (außer Homeoffice)
+  if(['Urlaub','ZA (Zeitausgleich)','Krankenstand','Sonstiges'].includes(type)){
+    const daySoll=getDaySoll(date);
+    if(daySoll>0){
+      if(!S.entries[date]) S.entries[date]={};
+      const e=S.entries[date];
+      if(!e.kommen){
+        const gehenMins=toMins('07:30')+daySoll+15;
+        e.kommen='07:30'; e.gehen=p(Math.floor(gehenMins/60))+':'+p(gehenMins%60); e.pause='00:15';
+        await dbSaveEntry(date);
+      }
+    }
+  }
   toast(`${type} eingetragen ✓`);
   render();
 }
@@ -1307,101 +1378,143 @@ async function resetData() {
 }
 
 // ═══════════════════════════════════════════════════════════════════
-// PDF EXPORT
+// PDF EXPORT — Gemeinsame Hilfsfunktionen
 // ═══════════════════════════════════════════════════════════════════
+function pdfStyles() {
+  return `*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',Arial,sans-serif;font-size:11px;color:#1a1a2e;background:#fff}
+.hdr{background:#1C2033;color:#fff;padding:16px 24px 14px;display:flex;justify-content:space-between;align-items:center}
+.hdr-title{font-size:17px;font-weight:700;letter-spacing:.04em}
+.hdr-sub{font-size:11px;color:rgba(255,255,255,.6);margin-top:2px}
+.hdr-right{text-align:right}
+.hdr-period{font-size:14px;font-weight:700;color:#e8c84a;letter-spacing:.04em}
+.hdr-info{font-size:10px;color:rgba(255,255,255,.5);margin-top:3px}
+section{margin:20px 24px 0}
+h2{font-size:9px;color:#888;letter-spacing:.14em;text-transform:uppercase;margin-bottom:10px;padding-bottom:5px;border-bottom:1px solid #eee}
+table{width:100%;border-collapse:collapse}
+th{font-size:9px;letter-spacing:.08em;font-weight:700;color:#666;padding:6px 8px;border-bottom:2px solid #1C2033;text-align:left;text-transform:uppercase}
+td{padding:6px 8px;border-bottom:1px solid #f0f0f0;vertical-align:middle;font-size:11px}
+tr:hover td{background:#fafafa}
+.fei-row td{background:#fff9ee}
+.we-row td{color:#aaa}
+.pos{color:#1a7a4a;font-weight:600}.neg{color:#c0392b;font-weight:600}
+.fei-lbl{color:#cc7700;font-weight:600}
+.vac-lbl{color:#2980b9;font-weight:600}
+.note-lbl{color:#888;font-style:italic}
+.netto-val{font-weight:700;color:#1C2033}
+.footer{margin:28px 24px 0;border-top:1px solid #ddd;padding-top:18px;display:grid;grid-template-columns:1fr 1fr;gap:48px}
+.sig-block{font-size:10px;color:#666}
+.sig-name{font-weight:700;color:#1C2033;margin-bottom:6px;font-size:11px}
+.sig-line{border-top:1px solid #999;margin-top:28px;padding-top:4px}
+.generated{text-align:center;color:#ccc;font-size:9px;padding:16px 24px}
+@media print{@page{margin:12mm 10mm;size:A4}body{font-size:10px}section{margin:14px 0 0}}`;
+}
+
+function pdfRow(d) {
+  const WDAY=['So','Mo','Di','Mi','Do','Fr','Sa'];
+  const e=S.entries[d]||{};
+  const dw=new Date(d).getDay();
+  const we=isWE(d);
+  const fei=isFeiertag(d);
+  const vac=S.absences.find(v=>d>=v.from_date&&d<=v.to_date);
+  const effM=effectiveWorkMins(d,e);
+  const diffM=effM!==null?effM-getDaySoll(d):null;
+  let status='';
+  if(fei) status=`<span class="fei-lbl">🎉 ${feiertagName(d)}</span>`;
+  else if(vac&&!(vac.from_date===d&&vac.to_date===d&&e.kommen)) status=`<span class="vac-lbl">${vac.type}</span>`;
+  else if(e.note) status=`<span class="note-lbl">${e.note.substring(0,45)}${e.note.length>45?'…':''}</span>`;
+  const rowCls=fei?'fei-row':we?'we-row':'';
+  return `<tr class="${rowCls}">
+    <td>${WDAY[dw]}, ${p(new Date(d).getDate())}.${p(new Date(d).getMonth()+1)}.</td>
+    <td style="color:#999">KW${kw(d)}</td>
+    <td>${e.kommen||'–'}</td>
+    <td>${e.gehen||'–'}</td>
+    <td>${e.pause?toMins(e.pause)+' min':'–'}</td>
+    <td class="netto-val">${effM!==null?fromMins(effM):'–'}</td>
+    <td>${diffM!==null&&diffM!==0?`<span class="${diffM>0?'pos':'neg'}">${fromMins(diffM,true)}</span>`:''}</td>
+    <td>${status}</td>
+  </tr>`;
+}
+
+function pdfOpen(title, bodyHTML) {
+  const win=window.open('','_blank','width=920,height=720');
+  if(!win){ toast('Bitte Pop-up für diese Seite erlauben','err'); return; }
+  win.document.write(`<!DOCTYPE html><html lang="de"><head><meta charset="UTF-8"><title>${title}</title><style>${pdfStyles()}</style></head><body>${bodyHTML}<div class="generated">Erstellt: ${new Date().toLocaleDateString('de-AT',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'})} · Arbeitszeit-App</div><script>window.onload=()=>window.print();<\/script></body></html>`);
+  win.document.close();
+}
+
+function pdfSignature() {
+  return `<div class="footer">
+    <div class="sig-block"><div class="sig-name">${S.settings.name||'Mitarbeiter/in'}</div><div class="sig-line">Unterschrift Mitarbeiter/in</div></div>
+    <div class="sig-block"><div class="sig-name">&nbsp;</div><div class="sig-line">Unterschrift &amp; Datum Vorgesetzte/r</div></div>
+  </div>`;
+}
+
+// Monats-PDF
 function exportPDF(year, month) {
-  const dates = monthDates(year, month);
-  const { ist, sollT, diff } = monthStats(year, month);
-  const za = totalZA();
-  const WDAY = ['So','Mo','Di','Mi','Do','Fr','Sa'];
-  const name = S.settings.name || 'Mitarbeiter';
+  const dates=monthDates(year,month);
+  const {ist,sollT,diff}=monthStats(year,month);
+  const printDates=dates.filter(d=>{ const we=isWE(d); const e=S.entries[d]||{}; const vac=S.absences.find(v=>d>=v.from_date&&d<=v.to_date); return !we||e.kommen||vac||isFeiertag(d); });
+  const absRows=S.absences.filter(a=>a.from_date.slice(0,7)===`${year}-${p(month+1)}`||a.to_date.slice(0,7)===`${year}-${p(month+1)}`).map(a=>`<tr><td>${fmtDay(a.from_date)}</td><td>${fmtDay(a.to_date)}</td><td class="vac-lbl">${a.type}</td><td class="note-lbl">${a.note||''}</td></tr>`).join('');
 
-  const rows = dates.map(d => {
-    const e = S.entries[d] || {};
-    const dw = new Date(d).getDay();
-    const we = isWE(d);
-    const fei = isFeiertag(d);
-    const vac = S.absences.find(v => d >= v.from_date && d <= v.to_date);
-    const m = workMins(e);
-    const effM = effectiveWorkMins(d, e);
-    const diff = effM !== null ? effM - getDaySoll(d) : null;
-    if (we && !e.kommen && !vac && !fei) return '';
-    const bg = fei ? '#fff8e6' : we ? '#f8f8f8' : '';
-    const diffStr = diff !== null && !fei ? `<span style="color:${diff>=0?'#1a7a4a':'#c0392b'};font-weight:600">${fromMins(diff,true)}</span>` : '';
-    let statusCol = '';
-    if (fei) statusCol = `<span style="color:#d35400;font-weight:600">🎉 ${feiertagName(d)}</span>`;
-    else if (vac) statusCol = `<span style="color:#2980b9;font-weight:600">${vac.type}</span>`;
-    else if (e.note) statusCol = `<em style="color:#666;font-size:10px">${e.note.substring(0,40)}${e.note.length>40?'…':''}</em>`;
-
-    return `<tr style="background:${bg}">
-      <td>${WDAY[dw]}, ${p(new Date(d).getDate())}.${p(month+1)}.</td>
-      <td style="color:#555">KW${kw(d)}</td>
-      <td>${fei||vac?'–':e.kommen||'–'}</td>
-      <td>${fei||vac?'–':e.gehen||'–'}</td>
-      <td>${fei||vac?'–':e.pause?toMins(e.pause)+' min':'–'}</td>
-      <td style="font-weight:600">${effM!==null?fromMins(effM):'–'}</td>
-      <td>${diffStr}</td>
-      <td>${statusCol}</td>
-    </tr>`;
-  }).join('');
-
-  const absRows = S.absences
-    .filter(a => a.from_date.startsWith(`${year}-${p(month+1)}`) || a.to_date.startsWith(`${year}-${p(month+1)}`))
-    .map(a => `<tr><td>${fmtDay(a.from_date)}</td><td>${fmtDay(a.to_date)}</td><td style="font-weight:600">${a.type}</td><td style="color:#888">${a.note||''}</td></tr>`).join('');
-
-  const html = `<!DOCTYPE html><html lang="de"><head><meta charset="UTF-8">
-  <title>Arbeitszeitnachweis ${MONTHS[month]} ${year}</title>
-  <style>
-    *{box-sizing:border-box;margin:0;padding:0}
-    body{font-family:Arial,Helvetica,sans-serif;font-size:11px;color:#222;padding:0}
-    .hdr{background:#1C2033;color:#fff;padding:18px 24px;display:flex;justify-content:space-between;align-items:flex-start}
-    .hdr h1{font-size:20px;font-weight:700;letter-spacing:.02em;margin-bottom:3px}
-    .hdr .sub{font-size:12px;color:rgba(255,255,255,.65)}
-    .hdr .right{text-align:right}
-    .hdr .period{font-size:16px;font-weight:700;color:#e8c84a}
-    .summary{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:#ddd;border:1px solid #ddd;margin:18px 24px 0}
-    .sum-box{background:#fff;padding:12px 14px}
-    .sum-lbl{font-size:9px;color:#888;letter-spacing:.08em;margin-bottom:4px}
-    .sum-val{font-size:20px;font-weight:700}
-    .pos{color:#1a7a4a}.neg{color:#c0392b}.neutral{color:#1C2033}
-    section{margin:18px 24px 0}
-    h2{font-size:12px;color:#888;letter-spacing:.1em;margin-bottom:8px;text-transform:uppercase}
-    table{width:100%;border-collapse:collapse;font-size:11px}
-    th{background:#1C2033;color:#fff;padding:7px 8px;text-align:left;font-weight:600;font-size:10px;letter-spacing:.06em}
-    td{padding:6px 8px;border-bottom:1px solid #eee;vertical-align:middle}
-    tr:last-child td{border-bottom:none}
-    .footer{margin:24px 24px 0;padding-top:16px;border-top:2px solid #1C2033;display:grid;grid-template-columns:1fr 1fr;gap:40px}
-    .sig-line{border-top:1px solid #333;padding-top:4px;font-size:10px;color:#888;margin-top:32px}
-    .generated{text-align:center;color:#bbb;font-size:10px;margin:20px 24px}
-  </style>
-  </head><body>
+  const body=`
   <div class="hdr">
-    <div><h1>Arbeitszeitnachweis</h1><div class="sub">${name}</div></div>
-    <div class="right"><div class="period">${MONTHS[month]} ${year}</div><div class="sub">Mo–Do: 8:00h &nbsp;·&nbsp; Fr: 6:30h &nbsp;·&nbsp; Woche: 38:30h</div></div>
-  </div>
-  <div class="summary">
-    <div class="sum-box"><div class="sum-lbl">IST-STUNDEN</div><div class="sum-val neutral">${fromMins(ist)}h</div></div>
-    <div class="sum-box"><div class="sum-lbl">SOLL-STUNDEN</div><div class="sum-val neutral">${fromMins(sollT)}h</div></div>
-    <div class="sum-box"><div class="sum-lbl">DIFFERENZ</div><div class="sum-val ${diff>=0?'pos':'neg'}">${fromMins(diff,true)}h</div></div>
-    <div class="sum-box"><div class="sum-lbl">ZA-SALDO GESAMT</div><div class="sum-val ${za>=0?'pos':'neg'}">${fromMins(za,true)}h</div></div>
+    <div><div class="hdr-title">Arbeitszeitnachweis</div><div class="hdr-sub">${S.settings.name||'Mitarbeiter'}</div></div>
+    <div class="hdr-right"><div class="hdr-period">${MONTHS[month]} ${year}</div><div class="hdr-info">Mo–Do 8:00h · Fr 6:30h · Woche 38:30h</div></div>
   </div>
   <section>
-    <h2>Tägliche Aufzeichnungen</h2>
+    <h2>Tägliche Aufzeichnungen &nbsp;·&nbsp; IST: ${fromMins(ist)}h &nbsp;/&nbsp; SOLL: ${fromMins(sollT)}h &nbsp;/&nbsp; Differenz: <span class="${diff>=0?'pos':'neg'}">${fromMins(diff,true)}h</span></h2>
     <table><thead><tr><th>Datum</th><th>KW</th><th>Kommen</th><th>Gehen</th><th>Pause</th><th>Netto</th><th>Differenz</th><th>Status / Notiz</th></tr></thead>
-    <tbody>${rows}</tbody></table>
+    <tbody>${printDates.map(pdfRow).join('')}</tbody></table>
   </section>
   ${absRows?`<section><h2>Abwesenheiten</h2><table><thead><tr><th>Von</th><th>Bis</th><th>Typ</th><th>Notiz</th></tr></thead><tbody>${absRows}</tbody></table></section>`:''}
-  <div class="footer">
-    <div><div class="sig-line">Unterschrift Mitarbeiter/in</div></div>
-    <div><div class="sig-line">Unterschrift Vorgesetzte/r &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Datum</div></div>
-  </div>
-  <div class="generated">Erstellt am ${new Date().toLocaleDateString('de-AT')} · Arbeitszeit-App</div>
-  <script>window.onload=()=>window.print();<\/script>
-  </body></html>`;
+  ${pdfSignature()}`;
+  pdfOpen(`Arbeitszeitnachweis ${MONTHS[month]} ${year}`, body);
+}
 
-  const win = window.open('','_blank','width=900,height=700');
-  if(win){ win.document.write(html); win.document.close(); }
-  else toast('Bitte Pop-up für diese Seite erlauben','err');
+// Wochen-PDF
+function exportPDFWeek(anchor) {
+  const dates=weekDates(anchor);
+  const kwNo=kw(dates[0]);
+  const wkIst=dates.reduce((a,d)=>{const m=effectiveWorkMins(d,S.entries[d]||{});return m?a+m:a},0);
+  const wkSoll=dates.reduce((a,d)=>a+getDaySoll(d),0);
+
+  const body=`
+  <div class="hdr">
+    <div><div class="hdr-title">Arbeitszeitnachweis</div><div class="hdr-sub">${S.settings.name||'Mitarbeiter'}</div></div>
+    <div class="hdr-right"><div class="hdr-period">KW ${kwNo} · ${fmtShortDay(dates[0])} – ${fmtShortDay(dates[6])}</div><div class="hdr-info">Mo–Do 8:00h · Fr 6:30h</div></div>
+  </div>
+  <section>
+    <h2>Wochenübersicht &nbsp;·&nbsp; IST: ${fromMins(wkIst)}h &nbsp;/&nbsp; SOLL: ${fromMins(wkSoll)}h &nbsp;/&nbsp; Differenz: <span class="${wkIst>=wkSoll?'pos':'neg'}">${fromMins(wkIst-wkSoll,true)}h</span></h2>
+    <table><thead><tr><th>Datum</th><th>KW</th><th>Kommen</th><th>Gehen</th><th>Pause</th><th>Netto</th><th>Differenz</th><th>Status / Notiz</th></tr></thead>
+    <tbody>${dates.map(pdfRow).join('')}</tbody></table>
+  </section>
+  ${pdfSignature()}`;
+  pdfOpen(`Wochennachweis KW${kwNo}`, body);
+}
+
+// Tages-PDF
+function exportPDFDay(date) {
+  const e=S.entries[date]||{};
+  const daySoll=getDaySoll(date);
+  const effM=effectiveWorkMins(date,e);
+  const diff=effM!==null?effM-daySoll:null;
+  const vac=S.absences.find(v=>date>=v.from_date&&date<=v.to_date);
+  const fei=isFeiertag(date);
+
+  const body=`
+  <div class="hdr">
+    <div><div class="hdr-title">Arbeitszeitnachweis</div><div class="hdr-sub">${S.settings.name||'Mitarbeiter'}</div></div>
+    <div class="hdr-right"><div class="hdr-period">${fmtDay(date)}</div><div class="hdr-info">KW ${kw(date)}</div></div>
+  </div>
+  <section>
+    <h2>Tagesnachweis</h2>
+    <table><thead><tr><th>Datum</th><th>KW</th><th>Kommen</th><th>Gehen</th><th>Pause</th><th>Netto</th><th>Differenz</th><th>Status / Notiz</th></tr></thead>
+    <tbody>${pdfRow(date)}</tbody></table>
+  </section>
+  ${e.note?`<section><h2>Notiz</h2><p style="color:#555;font-size:12px;line-height:1.6">${e.note}</p></section>`:''}
+  ${pdfSignature()}`;
+  pdfOpen(`Tagesnachweis ${fmtDay(date)}`, body);
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -1478,9 +1591,8 @@ function toggleReminders() {
 document.addEventListener('click', e => {
   const panel = document.getElementById('reminder-panel');
   const bell = document.getElementById('bell-wrap');
-  if(panel && !panel.contains(e.target) && !bell?.contains(e.target)) {
-    panel.classList.remove('open');
-  }
+  if(panel && !panel.contains(e.target) && !bell?.contains(e.target)) panel.classList.remove('open');
+  closeCDDs();
 });
 
 function toggleReminder(id, enabled) {
