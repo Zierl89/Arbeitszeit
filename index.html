@@ -144,6 +144,17 @@ select{width:100%}
 /* ═══ KW CHIP ══════════════════════════════════════════════════════ */
 .kw{font-size:9px;color:var(--txt3);background:rgba(255,255,255,.05);border-radius:3px;padding:2px 5px;display:inline-block;letter-spacing:.04em}
 
+/* ═══ FEIERTAG ═════════════════════════════════════════════════════ */
+.tr.fei{background:rgba(255,100,50,0.07)!important}
+.fei-badge{display:inline-block;padding:2px 7px;border-radius:4px;font-size:9px;background:rgba(255,120,50,0.15);color:#ff9060;border:1px solid rgba(255,120,50,0.35);letter-spacing:.04em}
+.fei-banner{background:rgba(255,100,50,0.1);border:1px solid rgba(255,120,50,0.3);border-radius:8px;padding:10px 14px;margin-bottom:12px;display:flex;align-items:center;gap:10px;font-size:13px;color:#ff9060}
+
+/* ═══ PAUSE BUTTONS ════════════════════════════════════════════════ */
+.pause-btns{display:flex;gap:5px;flex-wrap:wrap;margin-top:5px}
+.pbtn{background:rgba(232,200,74,0.1);border:1px solid rgba(232,200,74,0.25);border-radius:6px;color:var(--gold);font-family:var(--mono);font-size:11px;padding:5px 10px;cursor:pointer;transition:all .15s;font-weight:700}
+.pbtn:hover{background:rgba(232,200,74,0.2);transform:translateY(-1px)}
+.pbtn.preset{background:rgba(232,200,74,0.08)}
+
 /* ═══ QUARTER TABS ═════════════════════════════════════════════════ */
 .qtabs{display:flex;gap:4px;margin-bottom:16px;flex-wrap:wrap}
 .qt{background:none;border:1px solid var(--bdr);border-radius:7px;padding:7px 18px;color:var(--txt2);font-family:var(--mono);font-size:11px;cursor:pointer;transition:all .15s;letter-spacing:.06em}
@@ -231,7 +242,7 @@ strong{color:var(--txt);font-weight:700}
 // ║  KONFIGURATION — Nur diese 2-3 Zeilen anpassen                  ║
 // ╚══════════════════════════════════════════════════════════════════╝
 const CONFIG = {
-  supabaseUrl:     'https://bhbrzrupkpnxmyhmrfvc.supabase.co',   
+  supabaseUrl:     'https://bhbrzrupkpnxmyhmrfvc.supabase.co',   // https://xxxxx.supabase.co
   supabaseKey:     'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJoYnJ6cnVwa3BueG15aG1yZnZjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgwNzM3MDEsImV4cCI6MjA5MzY0OTcwMX0.VLks5CWZ0cnHRKoYMm8dOaM3pMGfnbD_yYEpkqpbxK8',         // aus Supabase → Settings → API
   outlookClientId: '',                       // Optional: Azure App Client-ID
 };
@@ -442,6 +453,30 @@ function fmtShortDay(ds) {
 const MONTHS=['Jänner','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
 const MONS=['Jän','Feb','Mär','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez'];
 
+// ── Österreichische Feiertage ──────────────────────────────────────
+const FEIERTAGE = {
+  '2025-01-01':'Neujahr','2025-01-06':'Heilige Drei Könige',
+  '2025-04-21':'Ostermontag','2025-05-01':'Staatsfeiertag',
+  '2025-05-29':'Christi Himmelfahrt','2025-06-09':'Pfingstmontag',
+  '2025-06-19':'Fronleichnam','2025-08-15':'Mariä Himmelfahrt',
+  '2025-10-26':'Nationalfeiertag','2025-11-01':'Allerheiligen',
+  '2025-12-08':'Mariä Empfängnis','2025-12-25':'Weihnachten','2025-12-26':'Stefanitag',
+  '2026-01-01':'Neujahr','2026-01-06':'Heilige Drei Könige',
+  '2026-04-06':'Ostermontag','2026-05-01':'Staatsfeiertag',
+  '2026-05-14':'Christi Himmelfahrt','2026-05-25':'Pfingstmontag',
+  '2026-06-04':'Fronleichnam','2026-08-15':'Mariä Himmelfahrt',
+  '2026-10-26':'Nationalfeiertag','2026-11-01':'Allerheiligen',
+  '2026-12-08':'Mariä Empfängnis','2026-12-25':'Weihnachten','2026-12-26':'Stefanitag',
+  '2027-01-01':'Neujahr','2027-01-06':'Heilige Drei Könige',
+  '2027-03-29':'Ostermontag','2027-05-01':'Staatsfeiertag',
+  '2027-05-06':'Christi Himmelfahrt','2027-05-17':'Pfingstmontag',
+  '2027-05-27':'Fronleichnam','2027-08-15':'Mariä Himmelfahrt',
+  '2027-10-26':'Nationalfeiertag','2027-11-01':'Allerheiligen',
+  '2027-12-08':'Mariä Empfängnis','2027-12-25':'Weihnachten','2027-12-26':'Stefanitag',
+};
+function isFeiertag(ds) { return !!FEIERTAGE[ds]; }
+function feiertagName(ds) { return FEIERTAGE[ds]||''; }
+
 function monthStats(y,m) {
   const dates=monthDates(y,m);
   const soll=S.settings.sollStunden*60;
@@ -496,22 +531,32 @@ function toast(msg,type='ok') {
 // ═══════════════════════════════════════════════════════════════════
 function viewToday() {
   const e=S.entries[S.date]||{};
-  const wm=workMins(e);
   const soll=S.settings.sollStunden*60;
   const za=totalZA();
   const vu=vacUsed();
   const wdates=weekDates(S.date);
   const wkTotal=wdates.reduce((a,d)=>{const m=workMins(S.entries[d]||{});return m?a+m:a},0);
   const wkSoll=wdates.filter(d=>!isWE(d)).length*soll;
-  const pct=wm!==null?Math.min(100,(wm/soll)*100):0;
   const olEvs=eventsForDate(S.date);
   const isT=S.date===todayStr();
+  const fei=isFeiertag(S.date);
+
+  // Live netto: wenn eingecheckt aber noch nicht ausgecheckt → laufende Zeit
+  let wm=workMins(e);
+  if(wm===null && e.kommen && !e.gehen && isT) {
+    wm=Math.max(0, toMins(nowTime())-toMins(e.kommen)-toMins(e.pause||'00:00'));
+  }
+  const pct=wm!==null?Math.min(100,(wm/soll)*100):0;
+  const nettoStr=wm!==null?fromMins(wm):'–:––';
+  const nettoCol=wm!==null?(wm>=soll?'cgrn':'cgold'):'';
+  const isLive=e.kommen&&!e.gehen&&isT;
 
   const stampLabel=!e.kommen?`▶  KOMMEN stempeln  (${nowTime()})`:!e.gehen?`◼  GEHEN stempeln  (${nowTime()})`:'✓  Beide Stempel gesetzt';
   const stampCls=!e.kommen?'bn':!e.gehen?'br':'bg';
 
-  const nettoStr=wm!==null?fromMins(wm):'–:––';
-  const nettoCol=wm!==null?(wm>=soll?'cgrn':'cgold'):'txt3';
+  // Pause Anzeige
+  const pauseMins=toMins(e.pause||'00:00');
+  const pauseDisp=pauseMins>0?`${pauseMins} Min`:'–';
 
   return `
   <div class="dnav">
@@ -521,8 +566,10 @@ function viewToday() {
     ${S.date!==todayStr()?`<button class="na bg" onclick="goToday()">Heute</button>`:''}
   </div>
 
+  ${fei?`<div class="fei-banner">🎉 <strong>${feiertagName(S.date)}</strong> — Gesetzlicher Feiertag in Österreich</div>`:''}
+
   <div class="sgrid">
-    <div class="sc"><div class="sl">⏱ HEUTE NETTO</div><div class="sv ${nettoCol}" id="netto-disp">${nettoStr}</div><div class="ss">Soll: ${fromMins(soll)}</div></div>
+    <div class="sc"><div class="sl">⏱ HEUTE NETTO${isLive?' <span style="color:var(--grn);font-size:9px">● LIVE</span>':''}</div><div class="sv ${nettoCol}" id="netto-disp">${nettoStr}</div><div class="ss">Soll: ${fromMins(soll)}</div></div>
     <div class="sc"><div class="sl">📊 ZA GESAMT</div><div class="sv ${za>=0?'cgrn':'cred'}">${za>=0?'+':''}${fromMins(Math.abs(za))}</div><div class="ss">${za>=0?'Überstunden':'Minderstunden'}</div></div>
     <div class="sc"><div class="sl">🌴 URLAUB</div><div class="sv cblu">${vu} / ${S.settings.urlaubsTage}</div><div class="ss">${Math.max(0,S.settings.urlaubsTage-vu)} Tage verbleibend</div></div>
     <div class="sc"><div class="sl">📅 WOCHE KW${kw(S.date)}</div><div class="sv ${wkTotal>=wkSoll?'cgrn':'cgold'}">${fromMins(wkTotal)}</div><div class="ss">Soll: ${fromMins(wkSoll)}</div></div>
@@ -531,10 +578,19 @@ function viewToday() {
   <div class="card">
     <div class="ctitle">STEMPELUHR</div>
     <div class="row2" style="margin-bottom:12px">
-      <div><div class="fl">KOMMEN</div><input type="time" id="inp-kommen" value="${e.kommen||''}" onchange="setField('kommen',this.value)"></div>
-      <div><div class="fl">GEHEN</div><input type="time" id="inp-gehen" value="${e.gehen||''}" onchange="setField('gehen',this.value)"></div>
-      <div><div class="fl">PAUSE</div><input type="time" id="inp-pause" value="${e.pause||''}" onchange="setField('pause',this.value)"></div>
-      <div><div class="fl">NETTO</div><div class="sv ${nettoCol}" style="font-size:22px;padding-top:5px" id="netto-disp2">${nettoStr}</div></div>
+      <div><div class="fl">KOMMEN</div><input type="time" id="inp-kommen" value="${e.kommen||''}" onchange="setField('kommen',this.value);render()"></div>
+      <div><div class="fl">GEHEN</div><input type="time" id="inp-gehen" value="${e.gehen||''}" onchange="setField('gehen',this.value);render()"></div>
+    </div>
+    <div style="margin-bottom:14px">
+      <div class="fl">PAUSE — Gesamt: <span style="color:var(--gold);font-weight:700">${pauseDisp}</span></div>
+      <div class="pause-btns">
+        ${[5,10,15,30,45,60].map(m=>`<button class="pbtn preset" onclick="addPause(${m})">+${m===60?'1 Std':m+' min'}</button>`).join('')}
+        ${pauseMins>0?`<button class="pbtn" style="background:var(--red2);color:var(--red);border-color:rgba(240,112,112,.25)" onclick="resetPause()">✕ Reset</button>`:''}
+      </div>
+    </div>
+    <div style="margin-bottom:6px">
+      <div class="fl">NETTO</div>
+      <div class="sv ${nettoCol}" style="font-size:26px;padding:4px 0" id="netto-disp2">${nettoStr}${isLive?' <span style="font-size:10px;color:var(--grn)">live</span>':''}</div>
     </div>
     <div style="margin-bottom:13px">
       <div class="fl">NOTIZ / TÄTIGKEITEN</div>
@@ -555,10 +611,8 @@ function viewToday() {
     ${olEvs.map(ev=>`<div class="ev"><div class="evt">${fmtEvTime(ev)}</div><div class="evu">${ev.subject}</div></div>`).join('')}
   </div>
   `:''}
+  `;}
 
-  ${S.olConnected&&olEvs.length===0?'':''}
-  `;
-}
 
 // ═══════════════════════════════════════════════════════════════════
 // RENDER — WEEK
@@ -590,12 +644,13 @@ function viewWeek() {
       const vac=S.absences.find(v=>d>=v.from_date&&d<=v.to_date);
       const we=isWE(d);
       const isT=d===td;
+      const fei=isFeiertag(d);
       const mcls=m!==null?(m>=soll?'cgrn':m>0?'cgold':'cred'):'';
-      return `<div class="tr wc${we?' wke':''}${isT?' tod':''}" onclick="${!we?`S.date='${d}';S.view='today';render()`:''}">
-        <span style="font-size:12px;${isT?'color:var(--gold);font-weight:700':'color:var(--txt)'}">${WDAY[i]} ${p(new Date(d).getDate())}.<span class="kw" style="margin-left:5px">${i===0?`KW${kwNo}`:''}</span></span>
-        <span style="color:var(--gold);font-size:12px">${vac?`<span class="badge ${absenceBadge(vac.type)}">${vac.type}</span>`:e.kommen||'–'}</span>
-        <span style="color:var(--gold);font-size:12px">${vac?'':e.gehen||'–'}</span>
-        <span style="color:var(--txt3);font-size:12px">${e.pause||'–'}</span>
+      return `<div class="tr wc${we?' wke':''}${isT?' tod':''}${fei?' fei':''}" onclick="${!we&&!fei?`S.date='${d}';S.view='today';render()`:fei?`S.date='${d}';S.view='today';render()`:''}">
+        <span style="font-size:12px;${isT?'color:var(--gold);font-weight:700':we?'':'color:var(--txt)'}">${WDAY[i]} ${p(new Date(d).getDate())}.<span class="kw" style="margin-left:5px">${i===0?`KW${kwNo}`:''}</span></span>
+        <span style="font-size:12px">${fei?`<span class="fei-badge">🎉 ${feiertagName(d)}</span>`:vac?`<span class="badge ${absenceBadge(vac.type)}">${vac.type}</span>`:`<span style="color:var(--gold)">${e.kommen||'–'}</span>`}</span>
+        <span style="color:var(--gold);font-size:12px">${fei||vac?'':e.gehen||'–'}</span>
+        <span style="color:var(--txt3);font-size:12px">${fei||vac?'':e.pause||'–'}</span>
         <span class="${mcls}" style="font-size:12px;font-weight:700">${m!==null?fromMins(m):'–'}</span>
       </div>`;
     }).join('')}
@@ -658,16 +713,17 @@ function viewMonth() {
       const we=isWE(d);
       const isT=d===td;
       const vac=S.absences.find(v=>d>=v.from_date&&d<=v.to_date);
+      const fei=isFeiertag(d);
       const kwN=kw(d);
       const showKw=kwMap[kwN]===d;
       const mcls=m!==null?(m>=soll?'cgrn':m>0?'cgold':'cred'):'';
-      if(we&&!e.kommen&&!vac) return '';
-      return `<div class="tr mc${we?' wke':''}${isT?' tod':''}" onclick="${!we?`S.date='${d}';S.view='today';render()`:'' }">
+      if(we&&!e.kommen&&!vac&&!fei) return '';
+      return `<div class="tr mc${we?' wke':''}${isT?' tod':''}${fei?' fei':''}" onclick="S.date='${d}';S.view='today';render()">
         <span>${showKw?`<span class="kw">KW${kwN}</span>`:''}</span>
-        <span style="font-size:12px;${isT?'color:var(--gold);font-weight:700':we?'color:var(--txt3)':'color:var(--txt)'}">${WDAY[dw]} ${p(new Date(d).getDate())}.</span>
-        <span style="color:var(--gold);font-size:12px">${vac?`<span class="badge ${absenceBadge(vac.type)}">${vac.type}</span>`:e.kommen||'–'}</span>
-        <span style="color:var(--gold);font-size:12px">${vac?'':e.gehen||'–'}</span>
-        <span style="color:var(--txt3);font-size:12px">${e.pause||'–'}</span>
+        <span style="font-size:12px;${isT?'color:var(--gold);font-weight:700':we?'color:var(--txt3)':fei?'color:#ff9060':'color:var(--txt)'}">${WDAY[dw]} ${p(new Date(d).getDate())}.</span>
+        <span style="font-size:12px">${fei?`<span class="fei-badge">🎉 ${feiertagName(d)}</span>`:vac?`<span class="badge ${absenceBadge(vac.type)}">${vac.type}</span>`:`<span style="color:var(--gold)">${e.kommen||'–'}</span>`}</span>
+        <span style="color:var(--gold);font-size:12px">${fei||vac?'':e.gehen||'–'}</span>
+        <span style="color:var(--txt3);font-size:12px">${fei||vac?'':e.pause||'–'}</span>
         <span class="${mcls}" style="font-size:12px;font-weight:700">${m!==null?fromMins(m):'–'}</span>
       </div>`;
     }).join('')}
@@ -954,12 +1010,26 @@ function stampNow() {
   if(!e.kommen) {
     setField('kommen',t);
     toast(`Kommen gestempelt: ${t}`);
+    render();
   } else if(!e.gehen) {
     setField('gehen',t);
     toast(`Gehen gestempelt: ${t}`);
+    render();
   } else {
     toast('Beide Stempel bereits gesetzt','err');
   }
+}
+
+// Pause hinzufügen / zurücksetzen
+function addPause(mins) {
+  const e=S.entries[S.date]||{};
+  const current=toMins(e.pause||'00:00');
+  setField('pause', fromMins(current+mins));
+  render();
+}
+function resetPause() {
+  setField('pause','');
+  render();
 }
 
 // Set a field in today's entry
@@ -1052,6 +1122,21 @@ function updateClock() {
 }
 updateClock();
 setInterval(updateClock, 10000);
+
+// ── Live Netto Timer (alle 60 Sek aktualisieren wenn eingecheckt) ─
+setInterval(() => {
+  if(S.view !== 'today') return;
+  const e=S.entries[S.date]||{};
+  if(!e.kommen || e.gehen || S.date !== todayStr()) return;
+  const soll=S.settings.sollStunden*60;
+  const wm=Math.max(0, toMins(nowTime())-toMins(e.kommen)-toMins(e.pause||'00:00'));
+  const nettoStr=fromMins(wm);
+  const col=wm>=soll?'cgrn':'cgold';
+  ['netto-disp','netto-disp2'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el){ el.textContent=nettoStr; el.className='sv '+col; }
+  });
+}, 60000);
 
 // ═══════════════════════════════════════════════════════════════════
 // INIT
