@@ -29,6 +29,8 @@
   --red2:     rgba(240,112,112,0.12);
   --blu:      #7eb8f5;
   --blu2:     rgba(126,184,245,0.12);
+  --live:     #3de8d8;
+  --live2:    rgba(61,232,216,0.12);
   --r:        11px;
   --mono:     'Space Mono', monospace;
   --serif:    'DM Serif Display', Georgia, serif;
@@ -70,7 +72,7 @@ html,body{background:var(--bg);color:var(--txt);font-family:var(--mono);min-heig
 .sl{font-size:9px;color:var(--txt3);letter-spacing:.12em;margin-bottom:5px}
 .sv{font-size:21px;font-weight:700;line-height:1;margin-bottom:2px}
 .ss{font-size:11px;color:var(--txt3)}
-.cgold{color:var(--gold)}.cgrn{color:var(--grn)}.cred{color:var(--red)}.cblu{color:var(--blu)}
+.cgold{color:var(--gold)}.cgrn{color:var(--grn)}.cred{color:var(--red)}.cblu{color:var(--blu)}.clive{color:var(--live);text-shadow:0 0 12px rgba(61,232,216,0.4)}
 
 /* ═══ TABLE ROWS ═══════════════════════════════════════════════════ */
 .tbl{background:var(--sur);border:1px solid var(--bdr);border-radius:var(--r);overflow:hidden;margin-bottom:13px}
@@ -262,7 +264,7 @@ const S = {
   qYear:     new Date().getFullYear(),
   entries:   {},    // { 'YYYY-MM-DD': {kommen,gehen,pause,note} }
   absences:  [],    // [{id,from_date,to_date,type,note}]
-  settings:  { name:'', sollStunden:8, urlaubsTage:25, outlookClientId:'' },
+  settings:  { name:'', sollStunden:8, urlaubsTage:25, outlookClientId:'', zaManuell:0 },
   olEvents:  [],    // Microsoft Graph calendar events
   olConnected: false,
   dbReady:   false,
@@ -307,6 +309,7 @@ async function dbLoad() {
       sollStunden:     parseFloat(sRes.data.soll_stunden) || 8,
       urlaubsTage:     parseInt(sRes.data.urlaubs_tage) || 25,
       outlookClientId: sRes.data.outlook_client_id || '',
+      zaManuell:       parseFloat(sRes.data.za_manuell) || 0,
     };
     if (S.settings.outlookClientId && typeof msal !== 'undefined') initMSAL(S.settings.outlookClientId);
   }
@@ -340,7 +343,8 @@ async function dbSaveSettings() {
   if (!DB) return;
   await DB.from('app_settings').upsert({
     id:1, name:S.settings.name, soll_stunden:S.settings.sollStunden,
-    urlaubs_tage:S.settings.urlaubsTage, outlook_client_id:S.settings.outlookClientId
+    urlaubs_tage:S.settings.urlaubsTage, outlook_client_id:S.settings.outlookClientId,
+    za_manuell:S.settings.zaManuell
   }, { onConflict: 'id' });
 }
 
@@ -426,6 +430,20 @@ function workMins(e) {
 }
 function isWE(ds)   { const d=new Date(ds).getDay(); return d===0||d===6; }
 
+// Tagessoll: Mo-Do=8h, Fr=6,5h, Sa/So=0
+function getDaySoll(ds) {
+  const dw=new Date(ds).getDay();
+  if(dw===0||dw===6) return 0;
+  if(dw===5) return 390; // 6h 30min = 390 min
+  return 480; // 8h = 480 min
+}
+
+// Effektive Arbeitszeit: Feiertag zählt automatisch als Tagessoll
+function effectiveWorkMins(ds, e) {
+  if(isFeiertag(ds)&&!isWE(ds)) return getDaySoll(ds);
+  return workMins(e);
+}
+
 function kw(ds) {
   const d=new Date(ds); d.setHours(0,0,0,0);
   d.setDate(d.getDate()+3-(d.getDay()+6)%7);
@@ -479,27 +497,36 @@ function feiertagName(ds) { return FEIERTAGE[ds]||''; }
 
 function monthStats(y,m) {
   const dates=monthDates(y,m);
-  const soll=S.settings.sollStunden*60;
   let ist=0,sollT=0;
   dates.forEach(d=>{
-    const e=S.entries[d], wm=workMins(e);
-    if(!isWE(d)){
+    const e=S.entries[d];
+    const daySoll=getDaySoll(d);
+    if(daySoll>0){
       const vac=S.absences.find(v=>d>=v.from_date&&d<=v.to_date);
-      if(!vac) sollT+=soll;
+      if(!vac) sollT+=daySoll;
     }
+    const wm=effectiveWorkMins(d,e);
     if(wm!==null) ist+=wm;
   });
   return { ist, sollT, diff:ist-sollT };
 }
 
 function totalZA() {
-  const soll=S.settings.sollStunden*60;
-  return Object.entries(S.entries).reduce((acc,[date,e])=>{
-    const m=workMins(e); if(m===null) return acc;
-    const dw=new Date(date).getDay();
-    if(dw===0||dw===6) return acc+m;
-    return acc+(m-soll);
-  },0);
+  // Startet mit manuell eingetragenem ZA-Guthaben
+  let za=(S.settings.zaManuell||0)*60; // Stunden → Minuten
+  Object.entries(S.entries).forEach(([date,e])=>{
+    const daySoll=getDaySoll(date);
+    if(isFeiertag(date)&&!isWE(date)) return; // Feiertag = kein ZA-Effekt
+    const m=workMins(e); if(m===null) return;
+    if(daySoll===0) za+=m; // Wochenende = alles Überstunden
+    else za+=(m-daySoll);
+  });
+  // ZA-Abwesenheiten abziehen
+  S.absences.filter(a=>a.type==='ZA (Zeitausgleich)').forEach(ab=>{
+    let d=new Date(ab.from_date),end=new Date(ab.to_date);
+    while(d<=end){ za-=getDaySoll(d.toISOString().slice(0,10)); d.setDate(d.getDate()+1); }
+  });
+  return za;
 }
 
 function vacUsed() {
@@ -531,30 +558,40 @@ function toast(msg,type='ok') {
 // ═══════════════════════════════════════════════════════════════════
 function viewToday() {
   const e=S.entries[S.date]||{};
-  const soll=S.settings.sollStunden*60;
+  const daySoll=getDaySoll(S.date);
   const za=totalZA();
   const vu=vacUsed();
   const wdates=weekDates(S.date);
-  const wkTotal=wdates.reduce((a,d)=>{const m=workMins(S.entries[d]||{});return m?a+m:a},0);
-  const wkSoll=wdates.filter(d=>!isWE(d)).length*soll;
+  const wkTotal=wdates.reduce((a,d)=>{const m=effectiveWorkMins(d,S.entries[d]||{});return m?a+m:a},0);
+  const wkSoll=wdates.reduce((a,d)=>a+getDaySoll(d),0);
   const olEvs=eventsForDate(S.date);
   const isT=S.date===todayStr();
   const fei=isFeiertag(S.date);
 
-  // Live netto: wenn eingecheckt aber noch nicht ausgecheckt → laufende Zeit
+  // Netto berechnen: Feiertag auto, live wenn eingecheckt, sonst aus Stempel
   let wm=workMins(e);
-  if(wm===null && e.kommen && !e.gehen && isT) {
+  const isLive=e.kommen&&!e.gehen&&isT&&!fei;
+  if(fei&&!isWE(S.date)) {
+    wm=daySoll; // Feiertag = automatisch Tagessoll
+  } else if(wm===null && isLive) {
     wm=Math.max(0, toMins(nowTime())-toMins(e.kommen)-toMins(e.pause||'00:00'));
   }
-  const pct=wm!==null?Math.min(100,(wm/soll)*100):0;
+
+  const pct=wm!==null&&daySoll>0?Math.min(100,(wm/daySoll)*100):0;
+  const done=wm!==null&&e.gehen; // ausgecheckt
   const nettoStr=wm!==null?fromMins(wm):'–:––';
-  const nettoCol=wm!==null?(wm>=soll?'cgrn':'cgold'):'';
-  const isLive=e.kommen&&!e.gehen&&isT;
+  const nettoCol=isLive?'clive':done?(wm>=daySoll?'cgrn':'cred'):(wm!==null?'cgold':'');
+
+  // Überstunden/Minusstunden nach Auschecken
+  let overStr='';
+  if(done&&daySoll>0) {
+    const diff=wm-daySoll;
+    const sign=diff>=0?'+':'';
+    overStr=`<span style="font-size:13px;${diff>=0?'color:var(--grn)':'color:var(--red)'};margin-left:10px;font-weight:400">${sign}${fromMins(diff)}</span>`;
+  }
 
   const stampLabel=!e.kommen?`▶  KOMMEN stempeln  (${nowTime()})`:!e.gehen?`◼  GEHEN stempeln  (${nowTime()})`:'✓  Beide Stempel gesetzt';
   const stampCls=!e.kommen?'bn':!e.gehen?'br':'bg';
-
-  // Pause Anzeige
   const pauseMins=toMins(e.pause||'00:00');
   const pauseDisp=pauseMins>0?`${pauseMins} Min`:'–';
 
@@ -566,10 +603,10 @@ function viewToday() {
     ${S.date!==todayStr()?`<button class="na bg" onclick="goToday()">Heute</button>`:''}
   </div>
 
-  ${fei?`<div class="fei-banner">🎉 <strong>${feiertagName(S.date)}</strong> — Gesetzlicher Feiertag in Österreich</div>`:''}
+  ${fei?`<div class="fei-banner">🎉 <strong>${feiertagName(S.date)}</strong> — Gesetzlicher Feiertag · ${daySoll===390?'6:30 h':'8:00 h'} automatisch eingetragen</div>`:''}
 
   <div class="sgrid">
-    <div class="sc"><div class="sl">⏱ HEUTE NETTO${isLive?' <span style="color:var(--grn);font-size:9px">● LIVE</span>':''}</div><div class="sv ${nettoCol}" id="netto-disp">${nettoStr}</div><div class="ss">Soll: ${fromMins(soll)}</div></div>
+    <div class="sc"><div class="sl">⏱ HEUTE NETTO${isLive?' <span style="color:var(--live);font-size:9px">● LIVE</span>':''}</div><div class="sv ${nettoCol}" id="netto-disp">${nettoStr}${overStr}</div><div class="ss">Soll: ${fromMins(daySoll)}</div></div>
     <div class="sc"><div class="sl">📊 ZA GESAMT</div><div class="sv ${za>=0?'cgrn':'cred'}">${za>=0?'+':''}${fromMins(Math.abs(za))}</div><div class="ss">${za>=0?'Überstunden':'Minderstunden'}</div></div>
     <div class="sc"><div class="sl">🌴 URLAUB</div><div class="sv cblu">${vu} / ${S.settings.urlaubsTage}</div><div class="ss">${Math.max(0,S.settings.urlaubsTage-vu)} Tage verbleibend</div></div>
     <div class="sc"><div class="sl">📅 WOCHE KW${kw(S.date)}</div><div class="sv ${wkTotal>=wkSoll?'cgrn':'cgold'}">${fromMins(wkTotal)}</div><div class="ss">Soll: ${fromMins(wkSoll)}</div></div>
@@ -578,8 +615,8 @@ function viewToday() {
   <div class="card">
     <div class="ctitle">STEMPELUHR</div>
     <div class="row2" style="margin-bottom:12px">
-      <div><div class="fl">KOMMEN</div><input type="time" id="inp-kommen" value="${e.kommen||''}" onchange="setField('kommen',this.value);render()"></div>
-      <div><div class="fl">GEHEN</div><input type="time" id="inp-gehen" value="${e.gehen||''}" onchange="setField('gehen',this.value);render()"></div>
+      <div><div class="fl">KOMMEN</div><input type="time" id="inp-kommen" value="${e.kommen||''}" onchange="setField('kommen',this.value);render()" ${fei?'disabled':''} style="${fei?'opacity:.4':''}"></div>
+      <div><div class="fl">GEHEN</div><input type="time" id="inp-gehen" value="${e.gehen||''}" onchange="setField('gehen',this.value);render()" ${fei?'disabled':''} style="${fei?'opacity:.4':''}"></div>
     </div>
     <div style="margin-bottom:14px">
       <div class="fl">PAUSE — Gesamt: <span style="color:var(--gold);font-weight:700">${pauseDisp}</span></div>
@@ -588,20 +625,22 @@ function viewToday() {
         ${pauseMins>0?`<button class="pbtn" style="background:var(--red2);color:var(--red);border-color:rgba(240,112,112,.25)" onclick="resetPause()">✕ Reset</button>`:''}
       </div>
     </div>
-    <div style="margin-bottom:6px">
+    <div style="margin-bottom:13px">
       <div class="fl">NETTO</div>
-      <div class="sv ${nettoCol}" style="font-size:26px;padding:4px 0" id="netto-disp2">${nettoStr}${isLive?' <span style="font-size:10px;color:var(--grn)">live</span>':''}</div>
+      <div class="${nettoCol}" style="font-size:28px;font-weight:700;padding:4px 0;display:flex;align-items:baseline;gap:8px" id="netto-disp2">
+        <span>${nettoStr}</span>${overStr}${isLive?'<span style="font-size:10px;color:var(--live);letter-spacing:.06em">LIVE</span>':''}
+      </div>
     </div>
     <div style="margin-bottom:13px">
       <div class="fl">NOTIZ / TÄTIGKEITEN</div>
       <input type="text" placeholder="Projekte, Besprechungen, Bemerkungen…" value="${(e.note||'').replace(/"/g,'&quot;')}" onblur="setField('note',this.value)" style="padding:8px 10px">
     </div>
-    <button class="stamp ${stampCls}" onclick="stampNow()">${stampLabel}</button>
-    ${wm!==null?`
+    ${fei?`<button class="stamp bg" style="opacity:.4;cursor:not-allowed">🎉 Feiertag — ${feiertagName(S.date)}</button>`:`<button class="stamp ${stampCls}" onclick="stampNow()">${stampLabel}</button>`}
+    ${wm!==null&&daySoll>0?`
     <div class="ptrack" style="margin-top:11px">
-      <div class="pfill" style="width:${pct}%;background:${wm>=soll?'var(--grn)':'var(--gold)'}"></div>
+      <div class="pfill" style="width:${pct}%;background:${isLive?'var(--live)':wm>=daySoll?'var(--grn)':'var(--gold)'}"></div>
     </div>
-    <div style="display:flex;justify-content:space-between;font-size:9px;color:var(--txt3);margin-top:4px"><span>0:00</span><span>${fromMins(soll)}</span></div>
+    <div style="display:flex;justify-content:space-between;font-size:9px;color:var(--txt3);margin-top:4px"><span>0:00</span><span>${fromMins(daySoll)}</span></div>
     `:''}
   </div>
 
@@ -619,9 +658,9 @@ function viewToday() {
 // ═══════════════════════════════════════════════════════════════════
 function viewWeek() {
   const dates=weekDates(S.wkAnchor);
-  const soll=S.settings.sollStunden*60;
-  const wkSoll=dates.filter(d=>!isWE(d)).length*soll;
-  const wkIst=dates.reduce((a,d)=>{const m=workMins(S.entries[d]||{});return m?a+m:a},0);
+  const soll=480; // Referenz für Zeilenfarbe (Mo-Do)
+  const wkSoll=dates.reduce((a,d)=>a+getDaySoll(d),0);
+  const wkIst=dates.reduce((a,d)=>{const m=effectiveWorkMins(d,S.entries[d]||{});return m?a+m:a},0);
   const kwNo=kw(dates[0]);
   const td=todayStr();
   const WDAY=['Mo','Di','Mi','Do','Fr','Sa','So'];
@@ -645,7 +684,7 @@ function viewWeek() {
       const we=isWE(d);
       const isT=d===td;
       const fei=isFeiertag(d);
-      const mcls=m!==null?(m>=soll?'cgrn':m>0?'cgold':'cred'):'';
+      const mcls=m!==null?(m>=getDaySoll(d)?'cgrn':m>0?'cgold':'cred'):'';
       return `<div class="tr wc${we?' wke':''}${isT?' tod':''}${fei?' fei':''}" onclick="${!we&&!fei?`S.date='${d}';S.view='today';render()`:fei?`S.date='${d}';S.view='today';render()`:''}">
         <span style="font-size:12px;${isT?'color:var(--gold);font-weight:700':we?'':'color:var(--txt)'}">${WDAY[i]} ${p(new Date(d).getDate())}.<span class="kw" style="margin-left:5px">${i===0?`KW${kwNo}`:''}</span></span>
         <span style="font-size:12px">${fei?`<span class="fei-badge">🎉 ${feiertagName(d)}</span>`:vac?`<span class="badge ${absenceBadge(vac.type)}">${vac.type}</span>`:`<span style="color:var(--gold)">${e.kommen||'–'}</span>`}</span>
@@ -677,7 +716,7 @@ function viewWeek() {
 // ═══════════════════════════════════════════════════════════════════
 function viewMonth() {
   const dates=monthDates(S.year, S.month);
-  const soll=S.settings.sollStunden*60;
+  const soll=480; // Referenz Mo-Do
   const { ist, sollT, diff } = monthStats(S.year, S.month);
   const td=todayStr();
   const WDAY=['So','Mo','Di','Mi','Do','Fr','Sa'];
@@ -716,7 +755,7 @@ function viewMonth() {
       const fei=isFeiertag(d);
       const kwN=kw(d);
       const showKw=kwMap[kwN]===d;
-      const mcls=m!==null?(m>=soll?'cgrn':m>0?'cgold':'cred'):'';
+      const mcls=m!==null?(m>=getDaySoll(d)?'cgrn':m>0?'cgold':'cred'):'';
       if(we&&!e.kommen&&!vac&&!fei) return '';
       return `<div class="tr mc${we?' wke':''}${isT?' tod':''}${fei?' fei':''}" onclick="S.date='${d}';S.view='today';render()">
         <span>${showKw?`<span class="kw">KW${kwN}</span>`:''}</span>
@@ -931,11 +970,18 @@ function viewSettings() {
     <div class="ctitle">PERSÖNLICHE EINSTELLUNGEN</div>
     <div class="row2" style="margin-bottom:12px">
       <div><div class="fl">DEIN NAME</div><input type="text" id="s-name" value="${S.settings.name}" placeholder="Max Mustermann"></div>
-      <div><div class="fl">SOLL-STUNDEN / TAG</div><input type="number" id="s-soll" value="${S.settings.sollStunden}" min="1" max="24" step="0.5" style="width:120px"></div>
-    </div>
-    <div class="row2" style="margin-bottom:16px">
       <div><div class="fl">URLAUBSTAGE / JAHR</div><input type="number" id="s-urlaub" value="${S.settings.urlaubsTage}" min="1" max="60" style="width:120px"></div>
+    </div>
+    <div class="row2" style="margin-bottom:12px">
+      <div>
+        <div class="fl">ZA STARTWERT (Stunden)</div>
+        <input type="number" id="s-za" value="${S.settings.zaManuell||0}" step="0.25" style="width:140px">
+        <div style="font-size:11px;color:var(--txt3);margin-top:4px">Stunden die vor App-Nutzung bereits angesammelt wurden (positiv = Guthaben, negativ = Minus)</div>
+      </div>
       <div><div class="fl">OUTLOOK CLIENT ID (AZURE)</div><input type="text" id="s-olcid" value="${S.settings.outlookClientId}" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"></div>
+    </div>
+    <div style="background:var(--sur2);border-radius:8px;padding:10px 13px;margin-bottom:14px;font-size:12px;color:var(--txt2)">
+      ℹ️ <strong style="color:var(--txt)">Arbeitszeit:</strong> Mo–Do = 8:00h &nbsp;·&nbsp; Fr = 6:30h &nbsp;·&nbsp; Woche = 38:30h
     </div>
     <button class="btn bn" onclick="saveSettings()">💾 Einstellungen speichern</button>
   </div>
@@ -1074,8 +1120,8 @@ async function delAbsence(id) {
 // Save settings
 async function saveSettings() {
   S.settings.name         = document.getElementById('s-name')?.value||'';
-  S.settings.sollStunden  = parseFloat(document.getElementById('s-soll')?.value)||8;
   S.settings.urlaubsTage  = parseInt(document.getElementById('s-urlaub')?.value)||25;
+  S.settings.zaManuell    = parseFloat(document.getElementById('s-za')?.value)||0;
   S.settings.outlookClientId = document.getElementById('s-olcid')?.value||'';
   await dbSaveSettings();
   if(S.settings.outlookClientId && typeof msal!=='undefined') initMSAL(S.settings.outlookClientId);
@@ -1128,13 +1174,12 @@ setInterval(() => {
   if(S.view !== 'today') return;
   const e=S.entries[S.date]||{};
   if(!e.kommen || e.gehen || S.date !== todayStr()) return;
-  const soll=S.settings.sollStunden*60;
+  const daySoll=getDaySoll(S.date);
   const wm=Math.max(0, toMins(nowTime())-toMins(e.kommen)-toMins(e.pause||'00:00'));
   const nettoStr=fromMins(wm);
-  const col=wm>=soll?'cgrn':'cgold';
   ['netto-disp','netto-disp2'].forEach(id=>{
     const el=document.getElementById(id);
-    if(el){ el.textContent=nettoStr; el.className='sv '+col; }
+    if(el){ const span=el.querySelector('span')||el; span.textContent=nettoStr; el.className=el.className.replace(/c\w+/g,'')+'clive'; }
   });
 }, 60000);
 
