@@ -86,9 +86,8 @@ html,body{background:var(--bg);color:var(--txt);font-family:var(--mono);min-heig
 .tr.wke:hover{background:none}
 .totrow{display:flex;justify-content:space-between;padding:11px 13px;border-top:1px solid var(--bdr);background:rgba(255,255,255,0.02);font-size:11px;color:var(--txt2)}
 
-/* Column layouts */
-.wc{grid-template-columns:85px 85px 85px 65px 75px}
-.mc{grid-template-columns:42px 90px 80px 80px 65px 75px}
+.wc{grid-template-columns:80px 78px 78px 58px 68px 96px}
+.mc{grid-template-columns:38px 84px 72px 72px 58px 68px 96px}
 .qc{grid-template-columns:1fr 80px 80px 85px 90px}
 .ac{grid-template-columns:1fr auto auto auto}
 
@@ -157,6 +156,20 @@ select{width:100%}
 .pbtn:hover{background:rgba(232,200,74,0.2);transform:translateY(-1px)}
 .pbtn.preset{background:rgba(232,200,74,0.08)}
 
+/* ═══ QUICK STATUS ══════════════════════════════════════════════════ */
+.qs{background:none;border:1px solid var(--bdr2);border-radius:5px;color:var(--txt2);font-family:var(--mono);font-size:10px;padding:3px 7px;cursor:pointer;transition:all .15s;white-space:nowrap;max-width:93px;overflow:hidden;text-overflow:ellipsis}
+.qs:hover{border-color:var(--gold3);color:var(--gold)}
+.qs-wrap{display:flex;gap:4px;flex-wrap:wrap;margin-top:8px}
+.qs-btn{background:none;border:1px solid var(--bdr);border-radius:6px;color:var(--txt2);font-family:var(--mono);font-size:10px;padding:5px 10px;cursor:pointer;transition:all .15s;letter-spacing:.04em}
+.qs-btn:hover{border-color:var(--gold3);color:var(--gold);background:var(--gold2)}
+.qs-btn.act-ho{background:rgba(147,197,253,.12);color:var(--blu);border-color:rgba(147,197,253,.3)}
+.qs-btn.act-url{background:rgba(92,214,160,.1);color:var(--grn);border-color:rgba(92,214,160,.25)}
+.qs-btn.act-za{background:rgba(232,200,74,.1);color:var(--gold);border-color:var(--gold3)}
+.qs-btn.act-krank{background:rgba(240,112,112,.1);color:var(--red);border-color:rgba(240,112,112,.25)}
+.qs-btn.act-son{background:var(--sur2);color:var(--txt2);border-color:var(--bdr2)}
+/* Homeoffice badge */
+.bdho{background:rgba(147,197,253,.1);color:var(--blu);border-color:rgba(147,197,253,.3)}
+
 /* ═══ QUARTER TABS ═════════════════════════════════════════════════ */
 .qtabs{display:flex;gap:4px;margin-bottom:16px;flex-wrap:wrap}
 .qt{background:none;border:1px solid var(--bdr);border-radius:7px;padding:7px 18px;color:var(--txt2);font-family:var(--mono);font-size:11px;cursor:pointer;transition:all .15s;letter-spacing:.06em}
@@ -167,7 +180,35 @@ select{width:100%}
 .warn{background:rgba(240,112,112,.07);border:1px solid rgba(240,112,112,.2);border-radius:10px;padding:14px 16px;margin-bottom:14px;font-size:13px;color:var(--txt2);line-height:1.65}
 .info{background:rgba(126,184,245,.07);border:1px solid rgba(126,184,245,.2);border-radius:10px;padding:14px 16px;margin-bottom:14px;font-size:13px;color:var(--txt2);line-height:1.65}
 
-/* ═══ MISC ═════════════════════════════════════════════════════════ */
+/* ═══ BELL / REMINDERS ═════════════════════════════════════════════ */
+#bell-wrap{position:relative;cursor:pointer;padding:6px 8px;border-radius:7px;transition:background .15s;user-select:none}
+#bell-wrap:hover{background:var(--sur2)}
+#bell-icon{font-size:16px;color:var(--txt2)}
+#bell-badge{position:absolute;top:4px;right:4px;background:#e05050;color:#fff;font-size:9px;font-family:var(--mono);font-weight:700;width:15px;height:15px;border-radius:50%;display:flex;align-items:center;justify-content:center;display:none}
+#reminder-panel{position:fixed;top:56px;right:8px;width:320px;max-height:520px;overflow-y:auto;background:#12151e;border:1px solid var(--bdr2);border-radius:12px;z-index:300;box-shadow:0 8px 32px rgba(0,0,0,.5);display:none;padding:16px}
+#reminder-panel.open{display:block}
+.rp-title{font-size:10px;color:var(--txt3);letter-spacing:.12em;margin-bottom:12px}
+.notif-item{display:flex;align-items:flex-start;gap:8px;padding:8px 10px;background:var(--sur2);border-radius:7px;margin-bottom:6px}
+.notif-time{font-size:10px;color:var(--txt3);white-space:nowrap;font-family:var(--mono)}
+.notif-msg{font-size:12px;color:var(--txt);line-height:1.4}
+.rem-item{display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:var(--sur);border:1px solid var(--bdr);border-radius:7px;margin-bottom:5px;gap:8px}
+.rem-label{font-size:12px;color:var(--txt);flex:1}
+.rem-sub{font-size:10px;color:var(--txt3);font-family:var(--mono)}
+.tog{position:relative;width:36px;height:20px;cursor:pointer;flex-shrink:0}
+.tog input{opacity:0;width:0;height:0;position:absolute}
+.tog-sl{position:absolute;inset:0;background:rgba(255,255,255,.12);border-radius:10px;transition:.2s}
+.tog-sl:before{content:'';position:absolute;width:14px;height:14px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.2s}
+.tog input:checked+.tog-sl{background:var(--grn)}
+.tog input:checked+.tog-sl:before{transform:translateX(16px)}
+
+/* ═══ PRINT / PDF ══════════════════════════════════════════════════ */
+@media print{
+  body{background:#fff!important;color:#111!important;font-family:Arial,sans-serif!important}
+  #hdr,#nav,#view,#toast,#reminder-panel{display:none!important}
+  #print-area{display:block!important}
+  @page{margin:15mm 12mm;size:A4}
+}
+#print-area{display:none}
 .sep{border:none;border-top:1px solid var(--bdr);margin:16px 0}
 code{font-family:var(--mono);font-size:11px;background:rgba(255,255,255,.08);padding:2px 6px;border-radius:4px;color:var(--gold)}
 a{color:var(--blu)}
@@ -187,8 +228,46 @@ strong{color:var(--txt);font-weight:700}
     <span class="ltxt">ARBEITSZEIT</span>
     <span id="uname"></span>
   </div>
-  <div id="clock"></div>
+  <div style="display:flex;align-items:center;gap:8px">
+    <div id="bell-wrap" onclick="toggleReminders()">
+      <span id="bell-icon">🔔</span>
+      <div id="bell-badge">0</div>
+    </div>
+    <div id="clock"></div>
+  </div>
 </header>
+
+<!-- Reminder Panel -->
+<div id="reminder-panel">
+  <div class="rp-title">ERINNERUNGEN & BENACHRICHTIGUNGEN</div>
+  <div id="rem-notifs"></div>
+  <div id="rem-list"></div>
+  <div style="margin-top:10px">
+    <button class="btn bg" onclick="showAddReminder()" style="width:100%;font-size:11px">+ Neue Erinnerung</button>
+  </div>
+  <div id="rem-add-form" style="display:none;margin-top:10px;background:var(--sur2);border-radius:8px;padding:12px">
+    <div class="fl" style="margin-bottom:6px">TITEL</div>
+    <input type="text" id="rem-title" placeholder="z.B. Teammeeting vorbereiten" style="margin-bottom:8px">
+    <div class="row2" style="margin-bottom:8px">
+      <div><div class="fl">TYP</div>
+        <select id="rem-type" onchange="updateRemForm()">
+          <option value="daily">Täglich</option>
+          <option value="weekday">Werktags (Mo-Fr)</option>
+          <option value="monthly" selected>Monatlich</option>
+        </select>
+      </div>
+      <div><div class="fl">UHRZEIT</div><input type="time" id="rem-time" value="08:00" style="width:100%"></div>
+    </div>
+    <div id="rem-day-wrap" style="margin-bottom:10px"><div class="fl">TAG DES MONATS</div><input type="number" id="rem-day" value="1" min="1" max="28" style="width:80px"></div>
+    <div style="display:flex;gap:8px">
+      <button class="btn bn" onclick="saveNewReminder()" style="flex:1">Speichern</button>
+      <button class="btn br" onclick="document.getElementById('rem-add-form').style.display='none'" style="flex:1">Abbrechen</button>
+    </div>
+  </div>
+</div>
+
+<!-- Print Area -->
+<div id="print-area"></div>
 
 <nav id="nav">
   <button class="nb" data-v="today">Heute</button>
@@ -264,7 +343,7 @@ const S = {
   qYear:     new Date().getFullYear(),
   entries:   {},    // { 'YYYY-MM-DD': {kommen,gehen,pause,note} }
   absences:  [],    // [{id,from_date,to_date,type,note}]
-  settings:  { name:'', sollStunden:8, urlaubsTage:25, outlookClientId:'', zaManuell:0 },
+  settings:  { name:'', sollStunden:8, urlaubsTage:25, urlaubsStunden:200, outlookClientId:'', zaManuell:0 },
   olEvents:  [],    // Microsoft Graph calendar events
   olConnected: false,
   dbReady:   false,
@@ -308,8 +387,10 @@ async function dbLoad() {
       name:            sRes.data.name || '',
       sollStunden:     parseFloat(sRes.data.soll_stunden) || 8,
       urlaubsTage:     parseInt(sRes.data.urlaubs_tage) || 25,
+      urlaubsStunden:  parseFloat(sRes.data.urlaubs_stunden) || (parseFloat(sRes.data.urlaubs_tage)||25)*8,
       outlookClientId: sRes.data.outlook_client_id || '',
       zaManuell:       parseFloat(sRes.data.za_manuell) || 0,
+      urlaubsStunden:  parseFloat(sRes.data.urlaubs_stunden) || (parseFloat(sRes.data.urlaubs_tage)||25)*8,
     };
     if (S.settings.outlookClientId && typeof msal !== 'undefined') initMSAL(S.settings.outlookClientId);
   }
@@ -343,8 +424,8 @@ async function dbSaveSettings() {
   if (!DB) return;
   await DB.from('app_settings').upsert({
     id:1, name:S.settings.name, soll_stunden:S.settings.sollStunden,
-    urlaubs_tage:S.settings.urlaubsTage, outlook_client_id:S.settings.outlookClientId,
-    za_manuell:S.settings.zaManuell
+    urlaubs_tage:S.settings.urlaubsTage, urlaubs_stunden:S.settings.urlaubsStunden,
+    outlook_client_id:S.settings.outlookClientId, za_manuell:S.settings.zaManuell
   }, { onConflict: 'id' });
 }
 
@@ -529,17 +610,29 @@ function totalZA() {
   return za;
 }
 
-function vacUsed() {
+function vacUsedHours() {
   return S.absences.filter(v=>v.type==='Urlaub').reduce((acc,v)=>{
-    let d=new Date(v.from_date),end=new Date(v.to_date),c=0;
-    while(d<=end){ if(d.getDay()!==0&&d.getDay()!==6) c++; d.setDate(d.getDate()+1); }
-    return acc+c;
+    let d=new Date(v.from_date),end=new Date(v.to_date),h=0;
+    while(d<=end){
+      const ds=d.toISOString().slice(0,10);
+      h+=getDaySoll(ds)/60; // Minuten → Stunden
+      d.setDate(d.getDate()+1);
+    }
+    return acc+h;
   },0);
 }
+// backward compat alias
+function vacUsed() { return vacUsedHours(); }
 
 function absenceBadge(type) {
-  const map={'Urlaub':'bdb','ZA (Zeitausgleich)':'bdn','Krankenstand':'bdr_','Feiertag':'bdg'};
+  const map={'Urlaub':'bdb','ZA (Zeitausgleich)':'bdn','Krankenstand':'bdr_','Feiertag':'bdg','Homeoffice':'bdho'};
   return map[type]||'bdx';
+}
+
+function qsBtnClass(type, activeType) {
+  if(type!==activeType) return 'qs-btn';
+  const map={'Homeoffice':'qs-btn act-ho','Urlaub':'qs-btn act-url','ZA (Zeitausgleich)':'qs-btn act-za','Krankenstand':'qs-btn act-krank'};
+  return map[type]||'qs-btn act-son';
 }
 
 function diffColor(diff) { return diff>=0?'cgrn':'cred'; }
@@ -560,7 +653,9 @@ function viewToday() {
   const e=S.entries[S.date]||{};
   const daySoll=getDaySoll(S.date);
   const za=totalZA();
-  const vu=vacUsed();
+  const vu=vacUsedHours();
+  const urlaubsTotal=S.settings.urlaubsStunden||200;
+  const urlaubsRest=Math.max(0,urlaubsTotal-vu);
   const wdates=weekDates(S.date);
   const wkTotal=wdates.reduce((a,d)=>{const m=effectiveWorkMins(d,S.entries[d]||{});return m?a+m:a},0);
   const wkSoll=wdates.reduce((a,d)=>a+getDaySoll(d),0);
@@ -608,9 +703,22 @@ function viewToday() {
   <div class="sgrid">
     <div class="sc"><div class="sl">⏱ HEUTE NETTO${isLive?' <span style="color:var(--live);font-size:9px">● LIVE</span>':''}</div><div class="sv ${nettoCol}" id="netto-disp">${nettoStr}${overStr}</div><div class="ss">Soll: ${fromMins(daySoll)}</div></div>
     <div class="sc"><div class="sl">📊 ZA GESAMT</div><div class="sv ${za>=0?'cgrn':'cred'}">${za>=0?'+':''}${fromMins(Math.abs(za))}</div><div class="ss">${za>=0?'Überstunden':'Minderstunden'}</div></div>
-    <div class="sc"><div class="sl">🌴 URLAUB</div><div class="sv cblu">${vu} / ${S.settings.urlaubsTage}</div><div class="ss">${Math.max(0,S.settings.urlaubsTage-vu)} Tage verbleibend</div></div>
+    <div class="sc"><div class="sl">🌴 URLAUB STUNDEN</div><div class="sv cblu">${vu.toFixed(2)}h / ${urlaubsTotal.toFixed(2)}h</div><div class="ss">${urlaubsRest.toFixed(2)}h verbleibend</div></div>
     <div class="sc"><div class="sl">📅 WOCHE KW${kw(S.date)}</div><div class="sv ${wkTotal>=wkSoll?'cgrn':'cgold'}">${fromMins(wkTotal)}</div><div class="ss">Soll: ${fromMins(wkSoll)}</div></div>
   </div>
+
+  ${(()=>{
+    const todayAb=S.absences.find(a=>a.from_date===S.date&&a.to_date===S.date);
+    const at=todayAb?.type||'';
+    const types=['Homeoffice','Urlaub','ZA (Zeitausgleich)','Krankenstand','Sonstiges'];
+    return `<div class="card" style="padding:13px 16px;margin-bottom:13px">
+      <div class="ctitle" style="margin-bottom:8px">TAGESSTATUS</div>
+      <div class="qs-wrap">
+        ${types.map(t=>`<button class="${qsBtnClass(t,at)}" onclick="quickSetAbsence('${S.date}','${t}')">${t}</button>`).join('')}
+        ${at?`<button class="qs-btn" style="color:var(--red);border-color:rgba(240,112,112,.25)" onclick="quickRemoveAbsence('${S.date}')">✕ Entfernen</button>`:''}
+      </div>
+    </div>`;
+  })()}
 
   <div class="card">
     <div class="ctitle">STEMPELUHR</div>
@@ -676,21 +784,29 @@ function viewWeek() {
   </div>
 
   <div class="tbl">
-    <div class="th wc"><span>TAG</span><span>KOMMEN</span><span>GEHEN</span><span>PAUSE</span><span>NETTO</span></div>
+    <div class="th wc"><span>TAG</span><span>KOMMEN</span><span>GEHEN</span><span>PAUSE</span><span>NETTO</span><span>STATUS</span></div>
     ${dates.map((d,i)=>{
       const e=S.entries[d]||{};
       const m=workMins(e);
       const vac=S.absences.find(v=>d>=v.from_date&&d<=v.to_date);
+      const singleDayAb=S.absences.find(a=>a.from_date===d&&a.to_date===d);
       const we=isWE(d);
       const isT=d===td;
       const fei=isFeiertag(d);
       const mcls=m!==null?(m>=getDaySoll(d)?'cgrn':m>0?'cgold':'cred'):'';
-      return `<div class="tr wc${we?' wke':''}${isT?' tod':''}${fei?' fei':''}" onclick="${!we&&!fei?`S.date='${d}';S.view='today';render()`:fei?`S.date='${d}';S.view='today';render()`:''}">
+      return `<div class="tr wc${we?' wke':''}${isT?' tod':''}${fei?' fei':''}" onclick="S.date='${d}';S.view='today';render()">
         <span style="font-size:12px;${isT?'color:var(--gold);font-weight:700':we?'':'color:var(--txt)'}">${WDAY[i]} ${p(new Date(d).getDate())}.<span class="kw" style="margin-left:5px">${i===0?`KW${kwNo}`:''}</span></span>
-        <span style="font-size:12px">${fei?`<span class="fei-badge">🎉 ${feiertagName(d)}</span>`:vac?`<span class="badge ${absenceBadge(vac.type)}">${vac.type}</span>`:`<span style="color:var(--gold)">${e.kommen||'–'}</span>`}</span>
-        <span style="color:var(--gold);font-size:12px">${fei||vac?'':e.gehen||'–'}</span>
-        <span style="color:var(--txt3);font-size:12px">${fei||vac?'':e.pause||'–'}</span>
+        <span style="font-size:12px">${fei?`<span class="fei-badge">🎉 ${feiertagName(d)}</span>`:vac&&!singleDayAb?`<span class="badge ${absenceBadge(vac.type)}">${vac.type}</span>`:`<span style="color:var(--gold)">${e.kommen||'–'}</span>`}</span>
+        <span style="color:var(--gold);font-size:12px">${fei||(!singleDayAb&&vac)?'':e.gehen||'–'}</span>
+        <span style="color:var(--txt3);font-size:12px">${fei||(!singleDayAb&&vac)?'':e.pause||'–'}</span>
         <span class="${mcls}" style="font-size:12px;font-weight:700">${m!==null?fromMins(m):'–'}</span>
+        <span onclick="event.stopPropagation()">
+          <select class="qs" onchange="quickSetAbsence('${d}',this.value)" style="font-size:10px">
+            <option value="">–</option>
+            ${['Homeoffice','Urlaub','ZA (Zeitausgleich)','Krankenstand','Sonstiges'].map(t=>`<option value="${t}" ${singleDayAb?.type===t?'selected':''}>${t}</option>`).join('')}
+          </select>
+        </span>
+        ${e.note?`<div style="grid-column:1/-1;padding:0 2px 7px;font-size:11px;color:var(--txt3);font-style:italic;line-height:1.4">✍ ${e.note.substring(0,90)}${e.note.length>90?'…':''}</div>`:''}
       </div>`;
     }).join('')}
     <div class="totrow">
@@ -744,7 +860,7 @@ function viewMonth() {
   </div>
 
   <div class="tbl" id="month-tbl">
-    <div class="th mc"><span>KW</span><span>TAG</span><span>KOMMEN</span><span>GEHEN</span><span>PAUSE</span><span>NETTO</span></div>
+    <div class="th mc"><span>KW</span><span>TAG</span><span>KOMMEN</span><span>GEHEN</span><span>PAUSE</span><span>NETTO</span><span>STATUS</span></div>
     ${dates.map(d=>{
       const e=S.entries[d]||{};
       const m=workMins(e);
@@ -752,6 +868,7 @@ function viewMonth() {
       const we=isWE(d);
       const isT=d===td;
       const vac=S.absences.find(v=>d>=v.from_date&&d<=v.to_date);
+      const singleDayAb=S.absences.find(a=>a.from_date===d&&a.to_date===d);
       const fei=isFeiertag(d);
       const kwN=kw(d);
       const showKw=kwMap[kwN]===d;
@@ -760,16 +877,26 @@ function viewMonth() {
       return `<div class="tr mc${we?' wke':''}${isT?' tod':''}${fei?' fei':''}" onclick="S.date='${d}';S.view='today';render()">
         <span>${showKw?`<span class="kw">KW${kwN}</span>`:''}</span>
         <span style="font-size:12px;${isT?'color:var(--gold);font-weight:700':we?'color:var(--txt3)':fei?'color:#ff9060':'color:var(--txt)'}">${WDAY[dw]} ${p(new Date(d).getDate())}.</span>
-        <span style="font-size:12px">${fei?`<span class="fei-badge">🎉 ${feiertagName(d)}</span>`:vac?`<span class="badge ${absenceBadge(vac.type)}">${vac.type}</span>`:`<span style="color:var(--gold)">${e.kommen||'–'}</span>`}</span>
-        <span style="color:var(--gold);font-size:12px">${fei||vac?'':e.gehen||'–'}</span>
-        <span style="color:var(--txt3);font-size:12px">${fei||vac?'':e.pause||'–'}</span>
+        <span style="font-size:12px">${fei?`<span class="fei-badge">🎉 ${feiertagName(d)}</span>`:vac&&!singleDayAb?`<span class="badge ${absenceBadge(vac.type)}">${vac.type}</span>`:`<span style="color:var(--gold)">${e.kommen||'–'}</span>`}</span>
+        <span style="color:var(--gold);font-size:12px">${fei||(!singleDayAb&&vac)?'':e.gehen||'–'}</span>
+        <span style="color:var(--txt3);font-size:12px">${fei||(!singleDayAb&&vac)?'':e.pause||'–'}</span>
         <span class="${mcls}" style="font-size:12px;font-weight:700">${m!==null?fromMins(m):'–'}</span>
+        <span onclick="event.stopPropagation()">
+          <select class="qs" onchange="quickSetAbsence('${d}',this.value)" style="font-size:10px">
+            <option value="">–</option>
+            ${['Homeoffice','Urlaub','ZA (Zeitausgleich)','Krankenstand','Sonstiges'].map(t=>`<option value="${t}" ${singleDayAb?.type===t?'selected':''}>${t}</option>`).join('')}
+          </select>
+        </span>
+        ${e.note?`<div style="grid-column:1/-1;padding:0 2px 7px;font-size:11px;color:var(--txt3);font-style:italic;line-height:1.4">✍ ${e.note.substring(0,90)}${e.note.length>90?'…':''}</div>`:''}
       </div>`;
     }).join('')}
     <div class="totrow">
       <span>Monatssumme</span>
       <span class="${diffColor(diff)}" style="font-weight:700">${fromMins(ist)} / ${fromMins(sollT)} &nbsp;(${fromMins(diff,true)})</span>
     </div>
+  </div>
+  <div style="margin-top:12px;display:flex;justify-content:flex-end">
+    <button class="btn bg" onclick="exportPDF(${S.year},${S.month})" style="font-size:12px">📄 Monatsbericht als PDF</button>
   </div>`;
 }
 
@@ -970,7 +1097,7 @@ function viewSettings() {
     <div class="ctitle">PERSÖNLICHE EINSTELLUNGEN</div>
     <div class="row2" style="margin-bottom:12px">
       <div><div class="fl">DEIN NAME</div><input type="text" id="s-name" value="${S.settings.name}" placeholder="Max Mustermann"></div>
-      <div><div class="fl">URLAUBSTAGE / JAHR</div><input type="number" id="s-urlaub" value="${S.settings.urlaubsTage}" min="1" max="60" style="width:120px"></div>
+      <div><div class="fl">URLAUBSSTUNDEN / JAHR</div><input type="number" id="s-urlaub" value="${(S.settings.urlaubsStunden||200).toFixed(2)}" min="1" max="500" step="0.5" style="width:140px"><div style="font-size:11px;color:var(--txt3);margin-top:3px">Standard: 25 Tage ≈ 192,50h</div></div>
     </div>
     <div class="row2" style="margin-bottom:12px">
       <div>
@@ -1066,7 +1193,26 @@ function stampNow() {
   }
 }
 
-// Pause hinzufügen / zurücksetzen
+// Quick absence set/remove directly from views
+async function quickSetAbsence(date, type) {
+  // Remove existing single-day absence for this date
+  const existing=S.absences.find(a=>a.from_date===date&&a.to_date===date);
+  if(existing) {
+    await dbDeleteAbsence(existing.id);
+    S.absences=S.absences.filter(a=>a.id!==existing.id);
+  }
+  if(!type) { toast('Status entfernt'); render(); return; }
+  const data=await dbSaveAbsence({from:date,to:date,type,note:''});
+  if(data) S.absences.unshift(data);
+  else S.absences.unshift({id:Date.now().toString(),from_date:date,to_date:date,type,note:''});
+  toast(`${type} eingetragen ✓`);
+  render();
+}
+async function quickRemoveAbsence(date) {
+  const existing=S.absences.find(a=>a.from_date===date&&a.to_date===date);
+  if(existing){ await dbDeleteAbsence(existing.id); S.absences=S.absences.filter(a=>a.id!==existing.id); }
+  toast('Status entfernt'); render();
+}
 function addPause(mins) {
   const e=S.entries[S.date]||{};
   const current=toMins(e.pause||'00:00');
@@ -1120,7 +1266,8 @@ async function delAbsence(id) {
 // Save settings
 async function saveSettings() {
   S.settings.name         = document.getElementById('s-name')?.value||'';
-  S.settings.urlaubsTage  = parseInt(document.getElementById('s-urlaub')?.value)||25;
+  S.settings.urlaubsStunden  = parseFloat(document.getElementById('s-urlaub')?.value)||200;
+  S.settings.urlaubsTage     = Math.round(S.settings.urlaubsStunden/8); // für Kompatibilität
   S.settings.zaManuell    = parseFloat(document.getElementById('s-za')?.value)||0;
   S.settings.outlookClientId = document.getElementById('s-olcid')?.value||'';
   await dbSaveSettings();
@@ -1160,14 +1307,267 @@ async function resetData() {
 }
 
 // ═══════════════════════════════════════════════════════════════════
-// CLOCK
+// PDF EXPORT
 // ═══════════════════════════════════════════════════════════════════
+function exportPDF(year, month) {
+  const dates = monthDates(year, month);
+  const { ist, sollT, diff } = monthStats(year, month);
+  const za = totalZA();
+  const WDAY = ['So','Mo','Di','Mi','Do','Fr','Sa'];
+  const name = S.settings.name || 'Mitarbeiter';
+
+  const rows = dates.map(d => {
+    const e = S.entries[d] || {};
+    const dw = new Date(d).getDay();
+    const we = isWE(d);
+    const fei = isFeiertag(d);
+    const vac = S.absences.find(v => d >= v.from_date && d <= v.to_date);
+    const m = workMins(e);
+    const effM = effectiveWorkMins(d, e);
+    const diff = effM !== null ? effM - getDaySoll(d) : null;
+    if (we && !e.kommen && !vac && !fei) return '';
+    const bg = fei ? '#fff8e6' : we ? '#f8f8f8' : '';
+    const diffStr = diff !== null && !fei ? `<span style="color:${diff>=0?'#1a7a4a':'#c0392b'};font-weight:600">${fromMins(diff,true)}</span>` : '';
+    let statusCol = '';
+    if (fei) statusCol = `<span style="color:#d35400;font-weight:600">🎉 ${feiertagName(d)}</span>`;
+    else if (vac) statusCol = `<span style="color:#2980b9;font-weight:600">${vac.type}</span>`;
+    else if (e.note) statusCol = `<em style="color:#666;font-size:10px">${e.note.substring(0,40)}${e.note.length>40?'…':''}</em>`;
+
+    return `<tr style="background:${bg}">
+      <td>${WDAY[dw]}, ${p(new Date(d).getDate())}.${p(month+1)}.</td>
+      <td style="color:#555">KW${kw(d)}</td>
+      <td>${fei||vac?'–':e.kommen||'–'}</td>
+      <td>${fei||vac?'–':e.gehen||'–'}</td>
+      <td>${fei||vac?'–':e.pause?toMins(e.pause)+' min':'–'}</td>
+      <td style="font-weight:600">${effM!==null?fromMins(effM):'–'}</td>
+      <td>${diffStr}</td>
+      <td>${statusCol}</td>
+    </tr>`;
+  }).join('');
+
+  const absRows = S.absences
+    .filter(a => a.from_date.startsWith(`${year}-${p(month+1)}`) || a.to_date.startsWith(`${year}-${p(month+1)}`))
+    .map(a => `<tr><td>${fmtDay(a.from_date)}</td><td>${fmtDay(a.to_date)}</td><td style="font-weight:600">${a.type}</td><td style="color:#888">${a.note||''}</td></tr>`).join('');
+
+  const html = `<!DOCTYPE html><html lang="de"><head><meta charset="UTF-8">
+  <title>Arbeitszeitnachweis ${MONTHS[month]} ${year}</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:Arial,Helvetica,sans-serif;font-size:11px;color:#222;padding:0}
+    .hdr{background:#1C2033;color:#fff;padding:18px 24px;display:flex;justify-content:space-between;align-items:flex-start}
+    .hdr h1{font-size:20px;font-weight:700;letter-spacing:.02em;margin-bottom:3px}
+    .hdr .sub{font-size:12px;color:rgba(255,255,255,.65)}
+    .hdr .right{text-align:right}
+    .hdr .period{font-size:16px;font-weight:700;color:#e8c84a}
+    .summary{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:#ddd;border:1px solid #ddd;margin:18px 24px 0}
+    .sum-box{background:#fff;padding:12px 14px}
+    .sum-lbl{font-size:9px;color:#888;letter-spacing:.08em;margin-bottom:4px}
+    .sum-val{font-size:20px;font-weight:700}
+    .pos{color:#1a7a4a}.neg{color:#c0392b}.neutral{color:#1C2033}
+    section{margin:18px 24px 0}
+    h2{font-size:12px;color:#888;letter-spacing:.1em;margin-bottom:8px;text-transform:uppercase}
+    table{width:100%;border-collapse:collapse;font-size:11px}
+    th{background:#1C2033;color:#fff;padding:7px 8px;text-align:left;font-weight:600;font-size:10px;letter-spacing:.06em}
+    td{padding:6px 8px;border-bottom:1px solid #eee;vertical-align:middle}
+    tr:last-child td{border-bottom:none}
+    .footer{margin:24px 24px 0;padding-top:16px;border-top:2px solid #1C2033;display:grid;grid-template-columns:1fr 1fr;gap:40px}
+    .sig-line{border-top:1px solid #333;padding-top:4px;font-size:10px;color:#888;margin-top:32px}
+    .generated{text-align:center;color:#bbb;font-size:10px;margin:20px 24px}
+  </style>
+  </head><body>
+  <div class="hdr">
+    <div><h1>Arbeitszeitnachweis</h1><div class="sub">${name}</div></div>
+    <div class="right"><div class="period">${MONTHS[month]} ${year}</div><div class="sub">Mo–Do: 8:00h &nbsp;·&nbsp; Fr: 6:30h &nbsp;·&nbsp; Woche: 38:30h</div></div>
+  </div>
+  <div class="summary">
+    <div class="sum-box"><div class="sum-lbl">IST-STUNDEN</div><div class="sum-val neutral">${fromMins(ist)}h</div></div>
+    <div class="sum-box"><div class="sum-lbl">SOLL-STUNDEN</div><div class="sum-val neutral">${fromMins(sollT)}h</div></div>
+    <div class="sum-box"><div class="sum-lbl">DIFFERENZ</div><div class="sum-val ${diff>=0?'pos':'neg'}">${fromMins(diff,true)}h</div></div>
+    <div class="sum-box"><div class="sum-lbl">ZA-SALDO GESAMT</div><div class="sum-val ${za>=0?'pos':'neg'}">${fromMins(za,true)}h</div></div>
+  </div>
+  <section>
+    <h2>Tägliche Aufzeichnungen</h2>
+    <table><thead><tr><th>Datum</th><th>KW</th><th>Kommen</th><th>Gehen</th><th>Pause</th><th>Netto</th><th>Differenz</th><th>Status / Notiz</th></tr></thead>
+    <tbody>${rows}</tbody></table>
+  </section>
+  ${absRows?`<section><h2>Abwesenheiten</h2><table><thead><tr><th>Von</th><th>Bis</th><th>Typ</th><th>Notiz</th></tr></thead><tbody>${absRows}</tbody></table></section>`:''}
+  <div class="footer">
+    <div><div class="sig-line">Unterschrift Mitarbeiter/in</div></div>
+    <div><div class="sig-line">Unterschrift Vorgesetzte/r &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Datum</div></div>
+  </div>
+  <div class="generated">Erstellt am ${new Date().toLocaleDateString('de-AT')} · Arbeitszeit-App</div>
+  <script>window.onload=()=>window.print();<\/script>
+  </body></html>`;
+
+  const win = window.open('','_blank','width=900,height=700');
+  if(win){ win.document.write(html); win.document.close(); }
+  else toast('Bitte Pop-up für diese Seite erlauben','err');
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// REMINDER SYSTEM
+// ═══════════════════════════════════════════════════════════════════
+const REM_KEY = 'arbeitszeit_reminders';
+const NOTIF_KEY = 'arbeitszeit_notifications';
+
+function loadReminders() {
+  try { return JSON.parse(localStorage.getItem(REM_KEY)||'[]'); } catch { return []; }
+}
+function saveReminders(rems) {
+  localStorage.setItem(REM_KEY, JSON.stringify(rems));
+}
+function loadNotifications() {
+  try { return JSON.parse(localStorage.getItem(NOTIF_KEY)||'[]'); } catch { return []; }
+}
+function saveNotifications(ns) {
+  localStorage.setItem(NOTIF_KEY, JSON.stringify(ns.slice(0,20)));
+}
+
+function initDefaultReminders() {
+  const rems = loadReminders();
+  if (!rems.find(r => r.id === 'backup')) {
+    rems.push({ id:'backup', title:'📦 Monatliches CSV-Backup', type:'monthly', day:1, time:'08:00', enabled:true, lastFiredMonth:'' });
+  }
+  if (!rems.find(r => r.id === 'stempel')) {
+    rems.push({ id:'stempel', title:'⏱ Gehen stempeln nicht vergessen', type:'weekday', time:'17:00', onlyIfWorking:true, enabled:true, lastFiredDate:'' });
+  }
+  saveReminders(rems);
+  return rems;
+}
+
+function renderReminderPanel() {
+  const rems = loadReminders();
+  const notifs = loadNotifications();
+  const badge = document.getElementById('bell-badge');
+  const unread = notifs.filter(n=>!n.read).length;
+  if(badge){ badge.textContent=unread; badge.style.display=unread>0?'flex':'none'; }
+
+  const panel = document.getElementById('reminder-panel');
+  if(!panel || !panel.classList.contains('open')) return;
+
+  // Mark all as read
+  const ns = loadNotifications().map(n=>({...n,read:true}));
+  saveNotifications(ns);
+  if(badge) badge.style.display='none';
+
+  const notifEl = document.getElementById('rem-notifs');
+  if(notifEl) notifEl.innerHTML = notifs.length===0
+    ? `<div style="color:var(--txt3);font-size:12px;margin-bottom:12px">Noch keine Benachrichtigungen</div>`
+    : notifs.slice(0,5).map(n=>`<div class="notif-item"><div class="notif-time">${n.time}</div><div class="notif-msg">${n.msg}</div></div>`).join('') + '<hr style="border-color:var(--bdr);margin:10px 0">';
+
+  const listEl = document.getElementById('rem-list');
+  if(listEl) listEl.innerHTML = `<div class="rp-title" style="margin-top:4px">KONFIGURIERTE ERINNERUNGEN</div>` + rems.map(r=>`
+    <div class="rem-item">
+      <div style="flex:1">
+        <div class="rem-label">${r.title}</div>
+        <div class="rem-sub">${r.type==='monthly'?`Monatlich, ${r.day}. um ${r.time}`:r.type==='weekday'?`Werktags um ${r.time}`:`Täglich um ${r.time}`}</div>
+      </div>
+      <label class="tog"><input type="checkbox" ${r.enabled?'checked':''} onchange="toggleReminder('${r.id}',this.checked)"><span class="tog-sl"></span></label>
+      ${!['backup','stempel'].includes(r.id)?`<button class="bdel" onclick="deleteReminder('${r.id}')">✕</button>`:''}
+    </div>`).join('');
+}
+
+function toggleReminders() {
+  const panel = document.getElementById('reminder-panel');
+  if(!panel) return;
+  panel.classList.toggle('open');
+  if(panel.classList.contains('open')) renderReminderPanel();
+}
+
+// Close panel when clicking outside
+document.addEventListener('click', e => {
+  const panel = document.getElementById('reminder-panel');
+  const bell = document.getElementById('bell-wrap');
+  if(panel && !panel.contains(e.target) && !bell?.contains(e.target)) {
+    panel.classList.remove('open');
+  }
+});
+
+function toggleReminder(id, enabled) {
+  const rems = loadReminders().map(r => r.id===id ? {...r, enabled} : r);
+  saveReminders(rems); renderReminderPanel();
+}
+
+function deleteReminder(id) {
+  saveReminders(loadReminders().filter(r=>r.id!==id)); renderReminderPanel();
+}
+
+function showAddReminder() {
+  const f = document.getElementById('rem-add-form');
+  if(f){ f.style.display = f.style.display==='none'?'block':'none'; updateRemForm(); }
+}
+
+function updateRemForm() {
+  const type = document.getElementById('rem-type')?.value;
+  const dw = document.getElementById('rem-day-wrap');
+  if(dw) dw.style.display = type==='monthly'?'block':'none';
+}
+
+function saveNewReminder() {
+  const title = document.getElementById('rem-title')?.value?.trim();
+  const type  = document.getElementById('rem-type')?.value;
+  const time  = document.getElementById('rem-time')?.value;
+  const day   = parseInt(document.getElementById('rem-day')?.value)||1;
+  if(!title){ toast('Bitte Titel eingeben','err'); return; }
+  const rems = loadReminders();
+  rems.push({ id: Date.now().toString(), title, type, time, day, enabled:true, lastFiredDate:'', lastFiredMonth:'' });
+  saveReminders(rems);
+  document.getElementById('rem-add-form').style.display='none';
+  document.getElementById('rem-title').value='';
+  renderReminderPanel();
+  toast('Erinnerung gespeichert ✓');
+}
+
+function fireNotification(msg) {
+  // Browser notification
+  if(Notification.permission==='granted') new Notification('⏱ Arbeitszeit', {body:msg, icon:''});
+  // In-app notification
+  const notifs = loadNotifications();
+  notifs.unshift({ id:Date.now(), msg, time:new Date().toLocaleString('de-AT',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}), read:false });
+  saveNotifications(notifs);
+  // Update badge
+  const badge = document.getElementById('bell-badge');
+  const unread = notifs.filter(n=>!n.read).length;
+  if(badge){ badge.textContent=unread; badge.style.display='flex'; }
+  toast(`🔔 ${msg}`);
+}
+
+function checkReminders() {
+  const rems = loadReminders();
+  const now = new Date();
+  const timeStr = `${p(now.getHours())}:${p(now.getMinutes())}`;
+  const dateStr = todayStr();
+  const monthStr = dateStr.slice(0,7);
+  const dw = now.getDay();
+  const dom = now.getDate();
+  let changed = false;
+  rems.forEach(r => {
+    if(!r.enabled) return;
+    let fire = false;
+    if(r.type==='daily' && r.time===timeStr && r.lastFiredDate!==dateStr) fire=true;
+    else if(r.type==='weekday' && r.time===timeStr && dw>=1&&dw<=5 && r.lastFiredDate!==dateStr) {
+      if(r.onlyIfWorking){ const e=S.entries[dateStr]||{}; fire=!!(e.kommen&&!e.gehen); }
+      else fire=true;
+    }
+    else if(r.type==='monthly' && r.time===timeStr && r.day===dom && r.lastFiredMonth!==monthStr) fire=true;
+    if(fire){ fireNotification(r.title); r.lastFiredDate=dateStr; if(r.type==='monthly') r.lastFiredMonth=monthStr; changed=true; }
+  });
+  if(changed) saveReminders(rems);
+}
+
+function requestNotifPermission() {
+  if(Notification.permission==='default') Notification.requestPermission();
+}
 function updateClock() {
   const el=document.getElementById('clock');
   if(el) el.textContent=nowTime();
 }
 updateClock();
 setInterval(updateClock, 10000);
+// Erinnerungen jede Minute prüfen
+setInterval(checkReminders, 60000);
+// Badge initial aktualisieren
+setTimeout(renderReminderPanel, 500);
 
 // ── Live Netto Timer (alle 60 Sek aktualisieren wenn eingecheckt) ─
 setInterval(() => {
@@ -1187,9 +1587,12 @@ setInterval(() => {
 // INIT
 // ═══════════════════════════════════════════════════════════════════
 async function init() {
-  // Set quarter to current
   S.quarter=Math.floor(new Date().getMonth()/3);
   S.qYear=new Date().getFullYear();
+
+  // Erinnerungen initialisieren
+  initDefaultReminders();
+  requestNotifPermission();
 
   const ok=await dbInit();
   if(ok) {
